@@ -156,6 +156,10 @@ export interface MatchData {
   won: boolean;
   self: PlayerData;
   opponent: PlayerData;
+  "elo-diff": number,
+  "elo-diff-formatted": string,
+  "elo-diff-now": number,
+  "elo-diff-now-formatted": string,
   "elo-change": number;
   date: Date;
   rounds: Array<RoundData>;
@@ -173,7 +177,9 @@ export interface PlayerData {
   id: number;
   userName: string;
   "current-elo": number;
-  "game-elo": number;
+  "match-elo": number;
+  "elo-gain": number,
+  "elo-gain-formatted": string,
   rank: number;
   wins: number;
   losses: number;

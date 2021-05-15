@@ -8,13 +8,18 @@ import {
   RawRoundData,
   RoundData,
 } from "../types/stats";
+import dayjs from "dayjs";
 
 export function filterMatches(
   matches: Array<MatchData>,
   ranked: Ranked,
   home: Home,
-  higher: Higher
+  higher: Higher,
+  startDate: Date,
+  endDate: Date
 ) {
+  const parsedStart = dayjs(startDate).startOf("day");
+  const parsedEnd = dayjs(endDate).endOf("day");
   return matches.filter((match) => {
     if (ranked !== Ranked.All) {
       if (match.ranked !== (ranked === Ranked.Ranked)) {
@@ -29,15 +34,19 @@ export function filterMatches(
     if (higher !== Higher.All) {
       if (
         higher === Higher.Higher &&
-        match.opponent["game-elo"] < match.self["game-elo"]
+        match.opponent["match-elo"] < match.self["match-elo"]
       ) {
         return false;
       } else if (
         higher === Higher.Lower &&
-        match.opponent["game-elo"] >= match.self["game-elo"]
+        match.opponent["match-elo"] >= match.self["match-elo"]
       ) {
         return false;
       }
+    }
+    const date = dayjs(match.date);
+    if (date.isBefore(parsedStart) || date.isAfter(parsedEnd)) {
+      return false;
     }
     return true;
   });
@@ -59,10 +68,18 @@ export function processData(
       won: match.attributes["winner"] != Number(home),
       self: createPlayerData(home, match, true),
       opponent: createPlayerData(home, match, false),
+      "elo-diff": 0,
+      "elo-diff-formatted": "",
+      "elo-diff-now": 0,
+      "elo-diff-now-formatted": "",
       "elo-change": match.attributes["elo-change"],
       date: new Date(match.attributes["created-at"]),
       rounds: [],
     };
+    newMatch["elo-diff"] = newMatch.self["match-elo"] - newMatch.opponent["match-elo"];
+    newMatch["elo-diff-formatted"] = formatDiff(newMatch["elo-diff"])
+    newMatch["elo-diff-now"] = newMatch.self["current-elo"] - newMatch.opponent["current-elo"]
+    newMatch["elo-diff-now-formatted"] = formatDiff(newMatch["elo-diff-now"])
     for (const round of match.relationships.rounds.data) {
       const roundData = hashedRounds[round.id];
       const newRoundData: RoundData = {
@@ -102,10 +119,22 @@ function createPlayerData(
     id: raw.id,
     userName: raw.UserName,
     "current-elo": raw.ELO,
-    "game-elo": score,
+    "match-elo": score,
+    "elo-gain": raw.ELO - score,
+    "elo-gain-formatted": formatDiff(raw.ELO - score),
     rank: raw.Rank,
     wins: raw.Wins,
     losses: raw.Losses,
     lastOnline: raw.LastOnline,
   };
+}
+
+export function formatDiff(diff: number) {
+  if (diff == 0) {
+    return "="
+  } else if (diff > 0) {
+    return `+${Math.round(diff)}`;
+  } else {
+    return Math.round(diff).toString();
+  }
 }
