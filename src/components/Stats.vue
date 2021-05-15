@@ -27,10 +27,22 @@
         <option>higher</option>
         <option>lower</option>
       </select>
-      <label for="startdate"> Start date:</label>
-      <input name="startdate" v-model="startdate" :min="earliestDate" :max="latestDate" type="date" />
-      <label for="enddate"> End date:</label>
-      <input name="enddate" v-model="enddate" :min="earliestDate" :max="latestDate" type="date" />
+      <label for="startDate"> Start date:</label>
+      <input
+        name="startDate"
+        v-model="startDate"
+        :min="earliestDate"
+        :max="latestDate"
+        type="date"
+      />
+      <label for="endDate"> End date:</label>
+      <input
+        name="endDate"
+        v-model="endDate"
+        :min="earliestDate"
+        :max="latestDate"
+        type="date"
+      />
       <p>You selected {{ details }}</p>
       <p>
         You <b>won</b> {{ wins }} out of {{ matchNumber }} games, a winrate of
@@ -62,115 +74,145 @@
   </div>
 </template>
 
-<script>
-import { ALL_STATS, round, processData, filterMatches } from "../util/util";
-import { SAMPLE_ID, SAMPLE_MATCHES, SAMPLE_ROUNDS } from "../util/sample";
+<script lang="ts">
+import { ALL_STATS, processData, filterMatches } from "../util/util";
+import * as SAMPLE from "../util/sample";
+import { ref, defineComponent, onMounted, computed, ComputedRef } from "vue";
+import { Higher, Home, MatchData, Ranked } from "../types/stats";
 
-export default {
+export default defineComponent({
   name: "Stats",
-  data() {
+  setup() {
+    const id = ref("");
+    const name = ref("");
+    // Displays status or error messages
+    const message = ref("");
+
+    const ranked = ref(Ranked.All);
+    const home = ref(Home.All);
+    const higher = ref(Higher.All);
+    const details = computed(() => {
+      var message = `${ranked.value} games `;
+      if (home.value !== Home.All) {
+        if (home.value === Home.Home) {
+          message += "that you challenged ";
+        } else {
+          message += "that you accepted ";
+        }
+      }
+      if (higher.value !== Higher.All) {
+        if (higher.value === Higher.Higher) {
+          message += "against higher ranked opponents ";
+        } else {
+          message += "against lower ranked opponents ";
+        }
+      }
+      return message;
+    });
+
+    const matches = ref(new Array<MatchData>());
+    const filteredMatches: ComputedRef<Array<MatchData>> = computed(() =>
+      filterMatches(matches.value, ranked.value, home.value, higher.value)
+    );
+    const matchNumber = computed(() => filteredMatches.value.length);
+
+    const startDate = ref("");
+    const endDate = ref("");
+    const earliestDate = computed(() => {
+      if (filteredMatches.value.length > 0) {
+        return filteredMatches.value[filteredMatches.value.length - 1].date
+          .toISOString()
+          .split("T")[0];
+      } else {
+        return "";
+      }
+    });
+
+    const latestDate = computed(() => {
+      if (filteredMatches.value.length > 0) {
+        return filteredMatches.value[0].date.toISOString().split("T")[0];
+      } else {
+        return "";
+      }
+    });
+
+    onMounted(() => {
+      matches.value = processData(
+        SAMPLE.SAMPLE_ID,
+        SAMPLE.SAMPLE_MATCHES,
+        SAMPLE.SAMPLE_ROUNDS
+      );
+      startDate.value = earliestDate.value;
+      endDate.value = latestDate.value;
+    });
+
     return {
-      id: "",
-      name: "",
-      message: "",
-      matches: [],
-      ranked: "all",
-      home: "all",
-      higher: "all",
-      startdate: null,
-      enddate: null
+      id,
+      name,
+      message,
+
+      ranked,
+      home,
+      higher,
+      details,
+
+      matches,
+      filteredMatches,
+      matchNumber,
+      startDate,
+      endDate,
+      earliestDate,
+      latestDate,
     };
   },
-  mounted() {
-    this.matches = processData(SAMPLE_ID, SAMPLE_MATCHES, SAMPLE_ROUNDS);
-    this.startdate = this.earliestDate;
-    this.enddate = this.latestDate;
-  },
-  computed: {
-    earliestDate() {
-        if (this.filteredMatches.length > 0) {
-            return this.filteredMatches[this.filteredMatches.length -1].date.toISOString().split('T')[0]
-        } else {
-            return null;
-        }
-    },
-    latestDate() {
-        if (this.filteredMatches.length > 0) {
-            return this.filteredMatches[0].date.toISOString().split('T')[0]
-        } else {
-            return null;
-        }
-    },
-    details() {
-      var details = `${this.ranked} games `;
-      if (this.home !== "all") {
-        if (this.home === "home") {
-          details += "that you challenged ";
-        } else {
-          details += "that you accepted ";
-        }
-      }
-      if (this.higher !== "all") {
-        if (this.higher === "higher") {
-          details += "against higher ranked opponents ";
-        } else {
-          details += "against lower ranked opponents ";
-        }
-      }
-      return details;
-    },
-    filteredMatches() {
-      return filterMatches(this.matches, this.ranked, this.home, this.higher);
-    },
-    matchNumber() {
-      return this.filteredMatches.length;
-    },
-    wins() {
-      return ALL_STATS["WINRATE"](this.filteredMatches);
-    },
-    winrate() {
-      return round(this.wins / this.matchNumber, true);
-    },
-    average_change() {
-      return round(ALL_STATS["AVERAGE_CHANGE"](this.filteredMatches), false);
-    },
-    average_gain() {
-      return round(ALL_STATS["AVERAGE_GAIN"](this.filteredMatches), false);
-    },
-    average_loss() {
-      return round(ALL_STATS["AVERAGE_LOSS"](this.filteredMatches), false);
-    },
-    total_change() {
-      return ALL_STATS["TOTAL_CHANGE"](this.filteredMatches);
-    },
-    total_gain() {
-      return ALL_STATS["TOTAL_GAIN"](this.filteredMatches);
-    },
-    total_loss() {
-      return ALL_STATS["TOTAL_LOSS"](this.filteredMatches);
-    },
-    average_elo_game() {
-      return Math.round(ALL_STATS["AVERAGE_ELO_GAME"](this.filteredMatches));
-    },
-    average_elo_now() {
-    console.log(this.filteredMatches)
-      return Math.round(ALL_STATS["AVERAGE_ELO_NOW"](this.filteredMatches));
-    },
-    highest_elo_game() {
-      return 0;
-    },
-    highest_elo_now() {
-      return 0;
-    },
-    lowest_elo_game() {
-      return 0;
-    },
-    lowest_elo_now() {
-      return 0;
-    },
-  },
+  //   wins() {
+  //       return ALL_STATS["WINRATE"](this.filteredMatches);
+  //     },
+  //     winrate() {
+  //       return round(this.wins / this.matchNumber, true);
+  //     },
+  //     average_change() {
+  //       return round(ALL_STATS["AVERAGE_CHANGE"](this.filteredMatches), false);
+  //     },
+  //     average_gain() {
+  //       return round(ALL_STATS["AVERAGE_GAIN"](this.filteredMatches), false);
+  //     },
+  //     average_loss() {
+  //       return round(ALL_STATS["AVERAGE_LOSS"](this.filteredMatches), false);
+  //     },
+  //     total_change() {
+  //       return ALL_STATS["TOTAL_CHANGE"](this.filteredMatches);
+  //     },
+  //     total_gain() {
+  //       return ALL_STATS["TOTAL_GAIN"](this.filteredMatches);
+  //     },
+  //     total_loss() {
+  //       return ALL_STATS["TOTAL_LOSS"](this.filteredMatches);
+  //     },
+  //     average_elo_game() {
+  //       return Math.round(ALL_STATS["AVERAGE_ELO_GAME"](this.filteredMatches));
+  //     },
+  //     average_elo_now() {
+  //       console.log(this.filteredMatches);
+  //       return Math.round(ALL_STATS["AVERAGE_ELO_NOW"](this.filteredMatches));
+  //     },
+  //     highest_elo_game() {
+  //       return 0;
+  //     },
+  //     highest_elo_now() {
+  //       return 0;
+  //     },
+  //     lowest_elo_game() {
+  //       return 0;
+  //     },
+  //     lowest_elo_now() {
+  //       return 0;
+  //     },
   methods: {
-    async getJSON(url) {
+    getStat(name: string): number|string {
+        return ALL_STATS[name](this.filteredMatches)
+    },
+    async getJSON(url: string) {
       const response = await fetch(url);
       return response.json();
     },
@@ -225,7 +267,23 @@ export default {
       this.message = "Matches collected, calculating statistics...";
     },
   },
-};
+});
 </script>
 
-<style></style>
+<style scoped>
+a {
+  color: #42b983;
+}
+
+label {
+  margin: 0 0.5em;
+  font-weight: bold;
+}
+
+code {
+  background-color: #eee;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #304455;
+}
+</style>
