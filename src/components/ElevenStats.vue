@@ -201,7 +201,9 @@
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
               <Card class="p-p-4">
-                <template #title>Final boss?</template>
+                <template #title
+                  >Final boss? <Avatar style="vertical-align: middle" size="xlarge" image="src/assets/cat.png"
+                /></template>
                 <template #content>
                   <p>
                     The <b>highest</b> ELO opponent you played was
@@ -569,6 +571,7 @@ import Column from "primevue/column";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
 import InputNumber from "primevue/inputnumber";
+import Avatar from "primevue/avatar";
 
 export default defineComponent({
   name: "ElevenStats",
@@ -584,6 +587,7 @@ export default defineComponent({
     TabView,
     TabPanel,
     InputNumber,
+    Avatar,
   },
   setup() {
     const loaded = ref(true);
@@ -688,15 +692,15 @@ export default defineComponent({
 
     // onMounted(() => {
     //   matches.value = processData(
-    //     //     //     // SAMPLE.SAMPLE_ID_BIG,
-    //     //     //     // SAMPLE.SAMPLE_MATCHES_BIG,
-    //     //     //     // SAMPLE.SAMPLE_ROUNDS_BIG
+    //     // SAMPLE.SAMPLE_ID_BIG,
+    //     // SAMPLE.SAMPLE_MATCHES_BIG,
+    //     // SAMPLE.SAMPLE_ROUNDS_BIG
     //     SAMPLE_HUGE.SAMPLE_ID_HUGE,
     //     SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
     //     SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
-    //     //     //     SAMPLE_TEST.SAMPLE_ID_TEST,
-    //     //     //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
-    //     //     //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
+    //     // SAMPLE_TEST.SAMPLE_ID_TEST,
+    //     //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
+    //     //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
     //   );
     // });
 
@@ -850,8 +854,8 @@ export default defineComponent({
       });
     },
     latestDate() {
-      this.startDate = new Date(this.earliestDate.getTime())
-      this.endDate = new Date(this.latestDate.getTime())
+      this.startDate = new Date(this.earliestDate.getTime());
+      this.endDate = new Date(this.latestDate.getTime());
     },
   },
   methods: {
