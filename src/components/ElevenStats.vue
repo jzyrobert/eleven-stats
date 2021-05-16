@@ -18,7 +18,28 @@
         name="name"
       />
       <Button class="p-m-2" label="submit" type="submit" />
+      <label for="offset">UTC Offset:</label>
+      <InputNumber
+        id="offset"
+        inputStyle="width: 4rem"
+        showButtons
+        v-model="utcOffset"
+        suffix=":00"
+        :max="12"
+        :min="-12"
+      />
+      <label for="cutoff">Day cutoff:</label>
+      <InputNumber
+        id="cutoff"
+        inputStyle="width: 5rem"
+        showButtons
+        v-model="dayCutoff"
+        suffix=":00 am"
+        :max="7"
+        :min="0"
+      />
     </form>
+
     <div v-if="message">{{ message }}</div>
     <ProgressSpinner v-if="!loaded" />
     <div v-if="loaded && matches.length > 0 && filteredMatches.length == 0">
@@ -547,6 +568,7 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
+import InputNumber from "primevue/inputnumber";
 
 export default defineComponent({
   name: "ElevenStats",
@@ -561,6 +583,7 @@ export default defineComponent({
     Column,
     TabView,
     TabPanel,
+    InputNumber,
   },
   setup() {
     const loaded = ref(true);
@@ -608,18 +631,18 @@ export default defineComponent({
         }
       }
       if (
-        startDate.value == earliestDate.value &&
-        endDate.value != latestDate.value
+        startDate.value.getTime() == earliestDate.value.getTime() &&
+        endDate.value.getTime() != latestDate.value.getTime()
       ) {
         message += `<i>before</i> ${endDate.value.toDateString()}`;
       } else if (
-        endDate.value == latestDate.value &&
-        startDate.value != earliestDate.value
+        endDate.value.getTime() == latestDate.value.getTime() &&
+        startDate.value.getTime() != earliestDate.value.getTime()
       ) {
         message += `<i>after</i> ${startDate.value.toDateString()}`;
       } else if (
-        startDate.value != earliestDate.value &&
-        endDate.value != latestDate.value
+        startDate.value.getTime() != earliestDate.value.getTime() &&
+        endDate.value.getTime() != latestDate.value.getTime()
       ) {
         message += `<i>between</i> ${startDate.value.toDateString()} and ${endDate.value.toDateString()}`;
       }
@@ -634,7 +657,8 @@ export default defineComponent({
         home.value,
         higher.value,
         startDate.value,
-        endDate.value
+        endDate.value,
+        dayCutoff.value
       )
     );
     const matchNumber = computed(() => filteredMatches.value.length);
@@ -643,7 +667,7 @@ export default defineComponent({
     const endDate: Ref<Date> = ref(new Date());
     const earliestDate = computed(() => {
       if (matches.value.length > 0) {
-        return dayjs(matches.value[matches.value.length - 1].date)
+        return matches.value[matches.value.length - 1].offsetDate
           .startOf("day")
           .toDate();
       } else {
@@ -653,27 +677,28 @@ export default defineComponent({
 
     const latestDate = computed(() => {
       if (matches.value.length > 0) {
-        return dayjs(matches.value[0].date).startOf("day").toDate();
+        return matches.value[0].offsetDate.startOf("day").toDate();
       } else {
         return new Date();
       }
     });
 
-    onMounted(() => {
-      matches.value = processData(
-        //     // SAMPLE.SAMPLE_ID_BIG,
-        //     // SAMPLE.SAMPLE_MATCHES_BIG,
-        //     // SAMPLE.SAMPLE_ROUNDS_BIG
-        SAMPLE_HUGE.SAMPLE_ID_HUGE,
-        SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
-        SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
-        //     SAMPLE_TEST.SAMPLE_ID_TEST,
-        //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
-        //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
-      );
-      startDate.value = earliestDate.value;
-      endDate.value = latestDate.value;
-    });
+    const utcOffset = ref(0);
+    const dayCutoff = ref(0);
+
+    // onMounted(() => {
+    //   matches.value = processData(
+    //     //     //     // SAMPLE.SAMPLE_ID_BIG,
+    //     //     //     // SAMPLE.SAMPLE_MATCHES_BIG,
+    //     //     //     // SAMPLE.SAMPLE_ROUNDS_BIG
+    //     SAMPLE_HUGE.SAMPLE_ID_HUGE,
+    //     SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
+    //     SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
+    //     //     //     SAMPLE_TEST.SAMPLE_ID_TEST,
+    //     //     //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
+    //     //     //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
+    //   );
+    // });
 
     const chartData = ref({
       type: "pie",
@@ -716,6 +741,9 @@ export default defineComponent({
       endDate,
       earliestDate,
       latestDate,
+
+      utcOffset,
+      dayCutoff,
 
       STATS,
       chartData,
@@ -814,6 +842,18 @@ export default defineComponent({
       return STATS.UNIQUE_OPPONENTS(this.filteredMatches);
     },
   },
+  watch: {
+    utcOffset() {
+      this.matches = this.matches.map((m) => {
+        m.offsetDate = m.date.add(this.utcOffset, "hours");
+        return m;
+      });
+    },
+    latestDate() {
+      this.startDate = new Date(this.earliestDate.getTime())
+      this.endDate = new Date(this.latestDate.getTime())
+    },
+  },
   methods: {
     resetName() {
       this.name = "";
@@ -860,14 +900,20 @@ export default defineComponent({
         return this.id;
       }
     },
-    async collectStats() {
+    resetValues() {
       this.matches = [];
       this.loaded = false;
       this.ranked = Ranked.All;
       this.home = Home.All;
       this.higher = Higher.All;
+      this.utcOffset = 0;
+      this.dayCutoff = 0;
+    },
+    async collectStats() {
+      this.resetValues();
       const id = await this.validateID();
       if (!id) {
+        this.loaded = true;
         return;
       } else {
         this.id = id;

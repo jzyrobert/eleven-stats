@@ -1,3 +1,5 @@
+import { Dayjs } from "dayjs"
+
 export const enum Ranked {
   All = "all",
   Ranked = "ranked",
@@ -164,7 +166,8 @@ export interface MatchData {
   "elo-change": number;
   // "elo-change-corrected": number,
   // "elo-change-formatted": string,
-  date: Date;
+  date: Dayjs;
+  offsetDate: Dayjs;
   rounds: Array<RoundData>;
 }
 

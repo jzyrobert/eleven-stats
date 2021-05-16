@@ -16,10 +16,11 @@ export function filterMatches(
   home: Home,
   higher: Higher,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  dayCutoff: number
 ) {
-  const parsedStart = dayjs(startDate).startOf("day");
-  const parsedEnd = dayjs(endDate).endOf("day");
+  const parsedStart = dayjs(startDate).startOf("day").add(dayCutoff, 'hours');
+  const parsedEnd = dayjs(endDate).endOf("day").add(dayCutoff, 'hours');
   return matches.filter((match) => {
     // Bugged matches
     // if (match.rounds.length < 2) {
@@ -55,8 +56,7 @@ export function filterMatches(
         return false;
       }
     }
-    const date = dayjs(match.date);
-    if (date.isBefore(parsedStart) || date.isAfter(parsedEnd)) {
+    if (match.offsetDate.isBefore(parsedStart) || match.offsetDate.isAfter(parsedEnd)) {
       return false;
     }
     return true;
@@ -87,7 +87,8 @@ export function processData(
       "elo-diff-now": 0,
       "elo-diff-now-formatted": "",
       "elo-change": match.attributes["elo-change"],
-      date: new Date(match.attributes["created-at"]),
+      date: dayjs(match.attributes["created-at"]),
+      offsetDate: dayjs(match.attributes["created-at"]),
       rounds: [],
     };
     newMatch["elo-diff"] =

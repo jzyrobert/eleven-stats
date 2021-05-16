@@ -208,7 +208,7 @@ export function MATCHES_DAY(matches: Array<MatchData>) {
   const dayCounts = _.reduce(
     matches,
     (dict, match) => {
-      const date = match.date.toDateString();
+      const date = match.offsetDate.format('YYYY-MM-DD');
       if (!(date in dict)) {
         dict[date] = 0;
       }
@@ -219,7 +219,7 @@ export function MATCHES_DAY(matches: Array<MatchData>) {
   );
   const maxDate = _.maxBy(Object.keys(dayCounts), (d) => dayCounts[d]);
   const maxDateMatches = matches.filter(
-    (m) => m.date.toDateString() == maxDate
+    (m) => m.offsetDate.format('YYYY-MM-DD') == maxDate
   );
   const maxDateNet = _.sumBy(maxDateMatches, (m) =>
     m.won ? m["elo-change"] : -1 * m["elo-change"]
