@@ -1,15 +1,15 @@
 <template>
-  <Stats />
+  <ElevenStats />
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import Stats from './components/Stats.vue'
+import ElevenStats from './components/ElevenStats.vue'
 
 export default defineComponent({
   name: 'App',
   components: {
-    Stats
+    ElevenStats
   }
 })
 </script>

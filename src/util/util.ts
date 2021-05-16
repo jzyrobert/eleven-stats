@@ -21,6 +21,13 @@ export function filterMatches(
   const parsedStart = dayjs(startDate).startOf("day");
   const parsedEnd = dayjs(endDate).endOf("day");
   return matches.filter((match) => {
+    // Bugged matches
+    // if (match.rounds.length < 2) {
+    //   return false;
+    // }
+    if (!match.complete) {
+      return false;
+    }
     if (ranked !== Ranked.All) {
       if (match.ranked !== (ranked === Ranked.Ranked)) {
         return false;
@@ -57,15 +64,18 @@ export function processData(
   matches: Array<RawMatchData>,
   rounds: Array<RawRoundData>
 ): Array<MatchData> {
+  console.log(matches);
+  console.log(rounds);
   const processedMatches = new Array<MatchData>();
   const hashedRounds = Object.fromEntries(rounds.map((r) => [r["id"], r]));
-  for (const match of matches) {
+  for (const [index, match] of matches.entries()) {
     const home = match.attributes["home-team"][0]["id"] == parseInt(id);
     const newMatch: MatchData = {
       id: match.id,
       ranked: match.attributes.ranked,
       home: home,
       won: match.attributes["winner"] != Number(home),
+      complete: match.attributes.state == 1 || match.attributes.winner > -1,
       self: createPlayerData(home, match, true),
       opponent: createPlayerData(home, match, false),
       "elo-diff": 0,
@@ -76,25 +86,32 @@ export function processData(
       date: new Date(match.attributes["created-at"]),
       rounds: [],
     };
-    newMatch["elo-diff"] = newMatch.self["match-elo"] - newMatch.opponent["match-elo"];
-    newMatch["elo-diff-formatted"] = formatDiff(newMatch["elo-diff"])
-    newMatch["elo-diff-now"] = newMatch.self["current-elo"] - newMatch.opponent["current-elo"]
-    newMatch["elo-diff-now-formatted"] = formatDiff(newMatch["elo-diff-now"])
+    newMatch["elo-diff"] =
+      newMatch.self["match-elo"] - newMatch.opponent["match-elo"];
+    newMatch["elo-diff-formatted"] = formatDiff(newMatch["elo-diff"]);
+    newMatch["elo-diff-now"] =
+      newMatch.self["current-elo"] - newMatch.opponent["current-elo"];
+    newMatch["elo-diff-now-formatted"] = formatDiff(newMatch["elo-diff-now"]);
     for (const round of match.relationships.rounds.data) {
       const roundData = hashedRounds[round.id];
+      // console.log(round)
       const newRoundData: RoundData = {
         id: roundData.id,
+        "opponent-id": newMatch.opponent.id,
+        "opponent-username": newMatch.opponent.userName,
         "self-score": home
           ? roundData.attributes["home-score"]
           : roundData.attributes["away-score"],
         "opponent-score": home
           ? roundData.attributes["away-score"]
           : roundData.attributes["home-score"],
+        "score-formatted": "",
         won: false,
         complete:
           roundData.attributes["home-score"] >= 11 ||
           roundData.attributes["away-score"] >= 11,
       };
+      newRoundData["score-formatted"] = `${newRoundData["self-score"]}-${newRoundData["opponent-score"]}`
       newRoundData["won"] =
         newRoundData["self-score"] > newRoundData["opponent-score"];
       newMatch.rounds.push(newRoundData);
@@ -131,7 +148,7 @@ function createPlayerData(
 
 export function formatDiff(diff: number) {
   if (diff == 0) {
-    return "="
+    return "=";
   } else if (diff > 0) {
     return `+${Math.round(diff)}`;
   } else {

@@ -154,6 +154,7 @@ export interface MatchData {
   ranked: boolean;
   home: boolean;
   won: boolean;
+  complete: boolean;
   self: PlayerData;
   opponent: PlayerData;
   "elo-diff": number,
@@ -161,14 +162,19 @@ export interface MatchData {
   "elo-diff-now": number,
   "elo-diff-now-formatted": string,
   "elo-change": number;
+  // "elo-change-corrected": number,
+  // "elo-change-formatted": string,
   date: Date;
   rounds: Array<RoundData>;
 }
 
 export interface RoundData {
   id: string;
+  "opponent-id": number,
+  "opponent-username": string,
   "self-score": number;
   "opponent-score": number;
+  "score-formatted": string,
   won: boolean;
   complete: boolean;
 }
@@ -178,10 +184,42 @@ export interface PlayerData {
   userName: string;
   "current-elo": number;
   "match-elo": number;
-  "elo-gain": number,
+  "elo-gain-corrected": number,
   "elo-gain-formatted": string,
   rank: number;
   wins: number;
   losses: number;
   lastOnline: string;
+}
+
+export interface RoundStatistics {
+  matchesTo3: string,
+  matchesTo3Won: string,
+  roundsToOvertime: string,
+  roundsToOvertimeWon: string,
+  matchesTo2Won: string,
+  hardWonRounds: number,
+  hardWonRoundsPercentage: string,
+  hardLostRounds: number,
+  hardLostRoundsPercentage: string,
+  longestRoundWon: RoundData,
+  longestRoundLost: RoundData,
+}
+
+export interface MostPlayedStatistics {
+  mostPlayed: string,
+  mostPlayedGames: number,
+  mostPlayedWon: number,
+  mostPlayedEloChange: number,
+  mostPlayedData: Array<MatchData>,
+  mostWon: string,
+  mostWonGames: number,
+  mostWonWon: number,
+  mostWonEloChange: number,
+  mostWonData: Array<MatchData>,
+  mostLost: string,
+  mostLostGames: number,
+  mostLostLost: number,
+  mostLostEloChange: number,
+  mostLostData: Array<MatchData>
 }
