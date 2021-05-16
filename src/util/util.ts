@@ -64,8 +64,8 @@ export function processData(
   matches: Array<RawMatchData>,
   rounds: Array<RawRoundData>
 ): Array<MatchData> {
-  console.log(matches);
-  console.log(rounds);
+  // console.log(matches);
+  // console.log(rounds);
   const processedMatches = new Array<MatchData>();
   const hashedRounds = Object.fromEntries(rounds.map((r) => [r["id"], r]));
   for (const [index, match] of matches.entries()) {

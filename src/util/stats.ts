@@ -8,20 +8,20 @@ import { SAMPLE_MATCHES_TEST } from "./predator";
 
 export function WINS(matches: Array<MatchData>) {
   // console.log(_.filter(SAMPLE_MATCHES_TEST, m => m.attributes.ranked && m.attributes["elo-change"] > 0 && m.attributes.state != 0 && m.attributes.winner < 0))
-  let discrep = 0;
-  _.reduceRight(matches, (first, second) => {
-    const diff = (first.won ? 1 : -1) * first["elo-change"];
-    if (first.self["match-elo"] + diff != second.self["match-elo"]) {
-      console.log(first);
-      console.log(second)
-      console.log(first.self["match-elo"])
-      console.log(diff)
-      console.log(second.self["match-elo"])
-      discrep += first["elo-change"]
-    }
-    return second;
-  });
-  console.log(discrep)
+  // let discrep = 0;
+  // _.reduceRight(matches, (first, second) => {
+  //   const diff = (first.won ? 1 : -1) * first["elo-change"];
+  //   if (first.self["match-elo"] + diff != second.self["match-elo"]) {
+  //     console.log(first);
+  //     console.log(second)
+  //     console.log(first.self["match-elo"])
+  //     console.log(diff)
+  //     console.log(second.self["match-elo"])
+  //     discrep += first["elo-change"]
+  //   }
+  //   return second;
+  // });
+  // console.log(discrep)
   return matches.filter((m) => m.won).length;
 }
 
