@@ -7,7 +7,7 @@ import {
   RawMatchData,
   RawRoundData,
   RoundData,
-} from "../types/stats";
+} from "../types/statTypes";
 import dayjs from "dayjs";
 
 export function filterMatches(
@@ -28,6 +28,10 @@ export function filterMatches(
     if (!match.complete) {
       return false;
     }
+    if (!match.ranked && match["elo-change"] > 0) {
+      return false;
+    }
+    // Regular filtering
     if (ranked !== Ranked.All) {
       if (match.ranked !== (ranked === Ranked.Ranked)) {
         return false;
@@ -75,7 +79,7 @@ export function processData(
       ranked: match.attributes.ranked,
       home: home,
       won: match.attributes["winner"] != Number(home),
-      complete: match.attributes.state == 1 || match.attributes.winner > -1,
+      complete: match.attributes.state == 1 && match.attributes.winner > -1,
       self: createPlayerData(home, match, true),
       opponent: createPlayerData(home, match, false),
       "elo-diff": 0,
@@ -116,6 +120,7 @@ export function processData(
         newRoundData["self-score"] > newRoundData["opponent-score"];
       newMatch.rounds.push(newRoundData);
     }
+    newMatch.rounds.sort((r1, r2) => parseInt(r1.id) - parseInt(r2.id))
     processedMatches.push(newMatch);
   }
   return processedMatches;

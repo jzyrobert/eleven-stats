@@ -204,6 +204,8 @@ export interface RoundStatistics {
   hardLostRoundsPercentage: string,
   longestRoundWon: RoundData,
   longestRoundLost: RoundData,
+  matchesFirstRoundWon: string,
+  matchesFirstRoundLost: string,
 }
 
 export interface MostPlayedStatistics {

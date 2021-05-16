@@ -1,4 +1,4 @@
-import { RawMatchData, RawRoundData } from "../types/stats";
+import { RawMatchData, RawRoundData } from "../types/statTypes";
 
 export const SAMPLE_ID = "68225";
 

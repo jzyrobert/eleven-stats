@@ -14,7 +14,6 @@
         type="text"
         class="p-m-2"
         @focus="resetID"
-        @change="resetID"
         v-model="name"
         name="name"
       />
@@ -68,8 +67,7 @@
         :minDate="startDate"
         :maxDate="latestDate"
       />
-      <p v-html="formatDetailsHTML"></p>
-      <p style="margin-bottom: 1cm"></p>
+      <h2 v-html="formatDetailsHTML"></h2>
       <TabView>
         <TabPanel header="Statistics">
           <div class="p-grid">
@@ -84,7 +82,7 @@
                   </p>
                   <p>
                     In that time, you played
-                    {{ STATS["UNIQUE_OPPONENTS"](filteredMatches) }} unique
+                    {{ unique_opponents.uniqueCount }} <b>unique</b>
                     opponents.
                   </p>
                   <p>
@@ -99,13 +97,13 @@
                 <template #title>Marathon day</template>
                 <template #content>
                   <p>
-                    The most matches you played was on
+                    The <b>most</b> matches you played was on
                     {{ matchCounts.maxDate.toDateString() }}, with an impressive
-                    {{ matchCounts.max }} matches.
+                    <b>{{ matchCounts.max }}</b> matches.
                   </p>
                   <p>
-                    Of those, you won {{ matchCounts.maxDateWins }}, with a net
-                    ELO change of {{ matchCounts.maxDateElo }}.
+                    Of those, you <b>won</b> {{ matchCounts.maxDateWins }}, with
+                    a net ELO change of {{ matchCounts.maxDateElo }}.
                   </p>
                   <p>
                     You started the day with {{ matchCounts.maxDateStart }} ELO
@@ -118,8 +116,8 @@
               v-if="ranked !== 'unranked'"
               class="cardbox p-col-12 p-md-6 p-lg-3"
             >
-              <Card>
-                <template #title> ELO gains </template>
+              <Card class="p-p-4">
+                <template #title> ELO gains (Not accurate) </template>
                 <template #content>
                   <DataTable :value="gains">
                     <Column field="type" header="" />
@@ -157,16 +155,31 @@
               <Card class="p-p-4">
                 <template #title> Rematch time? </template>
                 <template #content>
-                  If you were to play each opponent <b>once</b> again, their
-                  <b>average</b> ELO would be
-                  {{ STATS["AVERAGE_ELO_UNIQUE"](filteredMatches) }}, putting
-                  you {{ average_elo_diff_unique }} ELO
-                  {{ average_elo_diff_unique > 0 ? "above" : "below" }} them.
+                  <p>
+                    If you were to play each opponent <b>once</b> again, their
+                    <b>average</b> ELO would be
+                    {{ STATS["AVERAGE_ELO_UNIQUE"](filteredMatches) }}, putting
+                    you {{ average_elo_diff_unique }} ELO
+                    {{ average_elo_diff_unique > 0 ? "above" : "below" }} them.
+                  </p>
+                  <p>
+                    Of those {{ unique_opponents.uniqueCount }}, you have
+                    <b>never lost</b> to
+                    {{ unique_opponents.neverLostCount }} and
+                    <b>never won</b> to {{ unique_opponents.neverWonCount }} of
+                    them.
+                  </p>
+                  <p>
+                    You have played {{ unique_opponents.playedOnceCount }}
+                    <b>only once</b>, and
+                    {{ unique_opponents.playedMoreCount }} <b>at least 5</b>
+                    times.
+                  </p>
                 </template>
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Final boss?</template>
                 <template #content>
                   <p>
@@ -199,7 +212,7 @@
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Hidden Boss</template>
                 <template #content>
                   <p>
@@ -232,7 +245,7 @@
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Go easy on them</template>
                 <template #content>
                   <p>
@@ -256,7 +269,7 @@
             </div>
 
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Can it get worse?</template>
                 <template #content>
                   <p>
@@ -269,7 +282,8 @@
                     You were {{ lowest_now.self["match-elo"] }} ({{
                       lowest_now["elo-diff-formatted"]
                     }}) and they were
-                    {{ lowest_now.opponent["match-elo"] }} when you first played
+                    {{ lowest_now.opponent["match-elo"] }} when you
+                    <b>first</b> played
                   </p>
                   <p>
                     You <b>{{ lowest_now.won ? "won" : "lost" }}</b> with a
@@ -280,80 +294,105 @@
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
-                <template #title>Rising talent</template>
-                <template #content>
-                  The opponent who <b>most improved</b> since you first played
-                  them is {{ most_improved.opponent.userName }} ({{
-                    most_improved.opponent.id
-                  }})
-                  <p>
-                    You were {{ most_improved.self["match-elo"] }} ({{
-                      most_improved["elo-diff-formatted"]
-                    }}) and they were
-                    {{ most_improved.opponent["match-elo"] }} when you first
-                    played
-                  </p>
-                  <p>
-                    They have since risen to
-                    {{ most_improved.opponent["current-elo"] }} ({{
-                      most_improved.opponent["elo-gain-formatted"]
-                    }})
-                  </p>
-                </template>
-              </Card>
-            </div>
-            <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Old friends and enemies</template>
                 <template #content>
+                  <div v-if="ranked === 'unranked'">
+                    <p>
+                      <b>Most</b> matches: {{ most_played.mostPlayed }} ({{
+                        most_played.mostPlayedData[0].opponent.id
+                      }}) with {{ most_played.mostPlayedGames }} matches,
+                      winning {{ most_played.mostPlayedWon }}.
+                    </p>
+                    <p>
+                      Most <b>wins</b>: {{ most_played.mostWon }} ({{
+                        most_played.mostWonData[0].opponent.id
+                      }}) with {{ most_played.mostWonGames }} matches, winning
+                      {{ most_played.mostWonWon }}.
+                    </p>
+                    <p>
+                      Most <b>losses</b>: {{ most_played.mostLost }} ({{
+                        most_played.mostLostData[0].opponent.id
+                      }}) with {{ most_played.mostLostGames }} matches, losing
+                      {{ most_played.mostLostLost }}.
+                    </p>
+                  </div>
+                  <div v-if="ranked !== 'unranked'">
+                    <p>
+                      <b>Most</b> matches: {{ most_played.mostPlayed }} ({{
+                        most_played.mostPlayedData[0].opponent.id
+                      }}) with {{ most_played.mostPlayedGames }} matches,
+                      winning {{ most_played.mostPlayedWon }}, with a net ELO
+                      change of {{ most_played.mostPlayedEloChange }}.
+                    </p>
+                    <p>
+                      Most <b>wins</b>: {{ most_played.mostWon }} ({{
+                        most_played.mostWonData[0].opponent.id
+                      }}) with {{ most_played.mostWonGames }} matches, winning
+                      {{ most_played.mostWonWon }}, with a net ELO change of
+                      {{ most_played.mostWonEloChange }}.
+                    </p>
+                    <p>
+                      Most <b>losses</b>: {{ most_played.mostLost }} ({{
+                        most_played.mostLostData[0].opponent.id
+                      }}) with {{ most_played.mostLostGames }} matches, losing
+                      {{ most_played.mostLostLost }}, with a net ELO change of
+                      {{ most_played.mostLostEloChange }}.
+                    </p>
+                  </div>
+                </template>
+              </Card>
+            </div>
+            <div class="cardbox p-col-12 p-md-6 p-lg-3">
+              <Card class="p-p-4">
+                <template #title>Rising talent</template>
+                <template #content>
+                  The opponent who <b>most improved</b> since you
+                  <b>first</b> played them is
+                  {{ most_improved.firstGame.opponent.userName }} ({{
+                    most_improved.firstGame.opponent.id
+                  }})
                   <p>
-                    <b>Most</b> matches: {{ most_played.mostPlayed }} ({{
-                      most_played.mostPlayedData[0].opponent.id
-                    }}) with {{ most_played.mostPlayedGames }} matches, winning
-                    {{ most_played.mostPlayedWon }}.
-                  </p>
-                  <p v-if="ranked !== 'unranked'">
-                    Net ELO change is {{ most_played.mostPlayedEloChange }}
+                    You were {{ most_improved.firstGame.self["match-elo"] }} ({{
+                      most_improved.firstGame["elo-diff-formatted"]
+                    }}) and they were
+                    {{ most_improved.firstGame.opponent["match-elo"] }} when you
+                    <b>first</b> played
                   </p>
                   <p>
-                    Most <b>wins</b>: {{ most_played.mostWon }} ({{
-                      most_played.mostWonData[0].opponent.id
-                    }}) with {{ most_played.mostWonGames }} matches, winning
-                    {{ most_played.mostWonWon }}.
+                    They have since <b>risen</b> to
+                    {{ most_improved.firstGame.opponent["current-elo"] }} ({{
+                      most_improved.firstGame.opponent["elo-gain-formatted"]
+                    }})
                   </p>
-                  <p v-if="ranked !== 'unranked'">
-                    Net ELO change is {{ most_played.mostWonEloChange }}
-                  </p>
-                  <p>
-                    Most <b>losses</b>: {{ most_played.mostLost }} ({{
-                      most_played.mostLostData[0].opponent.id
-                    }}) with {{ most_played.mostLostGames }} matches, losing
-                    {{ most_played.mostLostLost }}.
-                  </p>
-                  <p v-if="ranked !== 'unranked'">
-                    Net ELO change is {{ most_played.mostLostEloChange }}
+                  <p v-if="most_improved.lastGame">
+                    You last played at
+                    {{ most_improved.lastGame.self["match-elo"] }}-{{
+                      most_improved.lastGame.opponent["match-elo"]
+                    }}.
                   </p>
                 </template>
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Fallen from grace</template>
                 <template #content>
-                  The opponent who <b>declined most</b> since you first played
-                  them is {{ least_improved.opponent.userName }} ({{
+                  The opponent who <b>declined most</b> since you
+                  <b>first</b> played them is
+                  {{ least_improved.opponent.userName }} ({{
                     least_improved.opponent.id
                   }})
                   <p>
                     You were {{ least_improved.self["match-elo"] }} ({{
                       least_improved["elo-diff-formatted"]
                     }}) and they were
-                    {{ least_improved.opponent["match-elo"] }} when you first
+                    {{ least_improved.opponent["match-elo"] }} when you
+                    <b>first</b>
                     played
                   </p>
                   <p>
-                    They have since fallen to
+                    They have since <b>fallen</b> to
                     {{ least_improved.opponent["current-elo"] }} ({{
                       least_improved.opponent["elo-gain-formatted"]
                     }})
@@ -365,7 +404,7 @@
               v-if="ranked !== 'unranked'"
               class="cardbox p-col-12 p-md-6 p-lg-3"
             >
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Grand Theft ELO</template>
                 <template #content>
                   <p>
@@ -384,8 +423,8 @@
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
-                <template #title>Final Chance</template>
+              <Card class="p-p-4">
+                <template #title>Last chance</template>
                 <template #content>
                   <p>
                     {{ all_round_stats.matchesTo3 }}% of your matches go to
@@ -401,13 +440,13 @@
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Fast win..or fast loss?</template>
                 <template #content>
                   <p>
                     Of the remaining
                     {{ 100 - Number(all_round_stats.matchesTo3) }}% matches that
-                    end in 2 rounds, you won
+                    end in 2 rounds (or less??), you won
                     {{ all_round_stats.matchesTo2Won }}% of them.
                   </p>
                   <p>
@@ -421,7 +460,24 @@
               </Card>
             </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
-              <Card>
+              <Card class="p-p-4">
+                <template #title>First impressions</template>
+                <template #content>
+                  <p>
+                    In matches where you <b>win</b> the <b>first</b> round,
+                    {{ all_round_stats.matchesFirstRoundWon }}% of them you win
+                    in 2 rounds.
+                  </p>
+                  <p>
+                    In matches where you <b>lose</b> the <b>first</b> round,
+                    {{ all_round_stats.matchesFirstRoundLost }}% result in a
+                    comeback win.
+                  </p>
+                </template>
+              </Card>
+            </div>
+            <div class="cardbox p-col-12 p-md-6 p-lg-3">
+              <Card class="p-p-4">
                 <template #title>Ping-Pong</template>
                 <template #content>
                   <p>
@@ -446,11 +502,9 @@
         <TabPanel header="Graphs">
           <div class="p-grid">
             <div class="cardbox p-col-12 p-md-6 p-lg-4">
-              <Card>
+              <Card class="p-p-4">
                 <template #title>Totally Real reasons you're losing</template>
-                <template #content>
-                  Work in Progress!
-                </template>
+                <template #content> Work in Progress! </template>
               </Card>
             </div>
           </div>
@@ -462,9 +516,9 @@
 
 <script lang="ts">
 import * as STATS from "../util/stats";
-import { processData, filterMatches } from "../util/util";
+import { processData, filterMatches } from "../util/parsing";
 // import * as SAMPLE from "../util/sample";
-// import * as SAMPLE_HUGE from "../util/sampleLarge";
+import * as SAMPLE_HUGE from "../util/sampleLarge";
 // import * as SAMPLE_TEST from "../util/predator";
 import {
   Ref,
@@ -481,7 +535,7 @@ import {
   MostPlayedStatistics,
   Ranked,
   RoundStatistics,
-} from "../types/stats";
+} from "../types/statTypes";
 import dayjs from "dayjs";
 import Calendar from "primevue/calendar";
 import InputText from "primevue/inputtext";
@@ -535,39 +589,39 @@ export default defineComponent({
       { name: "Lower Opponent ELO", val: Higher.Lower },
     ]);
     const details = computed(() => {
-      var message = `<b>${ranked.value}</b> ${filteredMatches.value.length} matches `;
+      var message = `<i>${ranked.value}</i> ${filteredMatches.value.length} matches `;
       if (ranked.value !== Ranked.All) {
-        message = `${filteredMatches.value.length} <b>${ranked.value}</b> matches `;
+        message = `${filteredMatches.value.length} <i>${ranked.value}</i> matches `;
       }
       if (home.value !== Home.All) {
         if (home.value === Home.Home) {
-          message += "that you <b>challenged</b> ";
+          message += "that you <i>challenged</i> ";
         } else {
-          message += "that you <b>accepted</b> ";
+          message += "that you <i>accepted</i> ";
         }
       }
       if (higher.value !== Higher.All) {
         if (higher.value === Higher.Higher) {
-          message += "against <b>higher</b> ranked opponents ";
+          message += "against <i>higher</i> ranked opponents ";
         } else {
-          message += "against <b>lower</b> ranked opponents ";
+          message += "against <i>lower</i> ranked opponents ";
         }
       }
       if (
         startDate.value == earliestDate.value &&
         endDate.value != latestDate.value
       ) {
-        message += `<b>before</b> ${endDate.value.toDateString()}`;
+        message += `<i>before</i> ${endDate.value.toDateString()}`;
       } else if (
         endDate.value == latestDate.value &&
         startDate.value != earliestDate.value
       ) {
-        message += `<b>after</b> ${startDate.value.toDateString()}`;
+        message += `<i>after</i> ${startDate.value.toDateString()}`;
       } else if (
         startDate.value != earliestDate.value &&
         endDate.value != latestDate.value
       ) {
-        message += `<b>between</b> ${startDate.value.toDateString()} and ${endDate.value.toDateString()}`;
+        message += `<i>between</i> ${startDate.value.toDateString()} and ${endDate.value.toDateString()}`;
       }
       return message;
     });
@@ -605,21 +659,21 @@ export default defineComponent({
       }
     });
 
-    // onMounted(() => {
-    //   matches.value = processData(
-    //     // SAMPLE.SAMPLE_ID_BIG,
-    //     // SAMPLE.SAMPLE_MATCHES_BIG,
-    //     // SAMPLE.SAMPLE_ROUNDS_BIG
-    //     // SAMPLE_HUGE.SAMPLE_ID_HUGE,
-    //     // SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
-    //     // SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
-    //     SAMPLE_TEST.SAMPLE_ID_TEST,
-    //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
-    //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
-    //   );
-    //   startDate.value = earliestDate.value;
-    //   endDate.value = latestDate.value;
-    // });
+    onMounted(() => {
+      matches.value = processData(
+        //     // SAMPLE.SAMPLE_ID_BIG,
+        //     // SAMPLE.SAMPLE_MATCHES_BIG,
+        //     // SAMPLE.SAMPLE_ROUNDS_BIG
+        SAMPLE_HUGE.SAMPLE_ID_HUGE,
+        SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
+        SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
+        //     SAMPLE_TEST.SAMPLE_ID_TEST,
+        //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
+        //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
+      );
+      startDate.value = earliestDate.value;
+      endDate.value = latestDate.value;
+    });
 
     const chartData = ref({
       type: "pie",
@@ -725,7 +779,10 @@ export default defineComponent({
     lowest_now(): MatchData {
       return STATS.LOWEST_NOW(this.filteredMatches)!;
     },
-    most_improved(): MatchData {
+    most_improved(): {
+      firstGame: MatchData;
+      lastGame: MatchData | undefined;
+    } {
       return STATS.MOST_IMPROVED(this.filteredMatches)!;
     },
     least_improved(): MatchData {
@@ -746,6 +803,15 @@ export default defineComponent({
     },
     all_round_stats(): RoundStatistics {
       return STATS.ALL_ROUND_STATS(this.filteredMatches);
+    },
+    unique_opponents(): {
+      uniqueCount: number;
+      neverWonCount: number;
+      neverLostCount: number;
+      playedOnceCount: number;
+      playedMoreCount: number;
+    } {
+      return STATS.UNIQUE_OPPONENTS(this.filteredMatches);
     },
   },
   methods: {
@@ -790,6 +856,7 @@ export default defineComponent({
           this.message = "No matching ID found!";
           return false;
         }
+        this.name = (await check.json()).data.attributes["user-name"];
         return this.id;
       }
     },
@@ -838,6 +905,10 @@ export default defineComponent({
 <style scoped>
 a {
   color: #42b983;
+}
+
+p {
+  margin: 10px;
 }
 
 label {

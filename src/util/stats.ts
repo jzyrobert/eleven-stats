@@ -2,7 +2,7 @@ import {
   MatchData,
   MostPlayedStatistics,
   RoundStatistics,
-} from "../types/stats";
+} from "../types/statTypes";
 import _ from "lodash";
 import { SAMPLE_MATCHES_TEST } from "./predator";
 
@@ -30,7 +30,27 @@ export function WINRATE(matches: Array<MatchData>) {
 }
 
 export function UNIQUE_OPPONENTS(matches: Array<MatchData>) {
-  return _.uniqBy(matches, "opponent.id").length;
+  const uniqueCount = _.uniqBy(matches, "opponent.id").length;
+  const groupedOpponents = _.groupBy(matches, (m) => m.opponent.id);
+  const neverWonCount = Object.keys(groupedOpponents).filter(
+    (name) => groupedOpponents[name].filter((m) => m.won).length == 0
+  ).length;
+  const neverLostCount = Object.keys(groupedOpponents).filter(
+    (name) => groupedOpponents[name].filter((m) => !m.won).length == 0
+  ).length;
+  const playedOnceCount = Object.keys(groupedOpponents).filter(
+    (name) => groupedOpponents[name].length == 1
+  ).length;
+  const playedMoreCount = Object.keys(groupedOpponents).filter(
+    (name) => groupedOpponents[name].length >= 5
+  ).length;
+  return {
+    uniqueCount,
+    neverWonCount,
+    neverLostCount,
+    playedOnceCount,
+    playedMoreCount,
+  };
 }
 
 export function AVERAGE_CHANGE(matches: Array<MatchData>) {
@@ -91,7 +111,7 @@ export function AVERAGE_ELO_DIFF_MATCH(matches: Array<MatchData>) {
 export function AVERAGE_OPPONENT_WINRATE(matches: Array<MatchData>) {
   return round(
     _.meanBy(
-      _.filter(matches, (m) => m.opponent.wins + m.opponent.losses > 0),
+      matches.filter((m) => m.opponent.wins + m.opponent.losses > 0),
       (m) => m.opponent.wins / (m.opponent.wins + m.opponent.losses)
     ),
     true
@@ -102,7 +122,7 @@ export function AVERAGE_OPPONENT_WINRATE_UNIQUE(matches: Array<MatchData>) {
   return round(
     _.meanBy(
       _.uniqBy(
-        _.filter(matches, (m) => m.opponent.wins + m.opponent.losses > 0),
+        matches.filter((m) => m.opponent.wins + m.opponent.losses > 0),
         "opponent.id"
       ),
       (m) => m.opponent.wins / (m.opponent.wins + m.opponent.losses)
@@ -162,14 +182,23 @@ export function LOWEST_NOW(matches: Array<MatchData>) {
 }
 
 export function MOST_IMPROVED(matches: Array<MatchData>) {
-  return _.maxBy(matches, "opponent.elo-gain");
+  const mostImproved = _.maxBy(matches, "opponent.elo-gain")!;
+  const mostRecentGame = matches.find(
+    (m) => m.id != mostImproved.id && m.opponent.id === mostImproved.opponent.id
+  );
+  return {
+    firstGame: mostImproved,
+    lastGame: mostRecentGame,
+  };
 }
 
 export function LEAST_IMPROVED(matches: Array<MatchData>) {
   return _.minBy(
-    _.filter(
-      matches,
-      (m) => m.opponent["current-elo"] > 0 && m.opponent["current-elo"] != 1500
+    matches.filter(
+      (m) =>
+        m.opponent["elo-gain"] <= 0 &&
+        m.opponent["current-elo"] > 0 &&
+        m.opponent["current-elo"] != 1500
     ),
     "opponent.elo-gain"
   );
@@ -189,8 +218,7 @@ export function MATCHES_DAY(matches: Array<MatchData>) {
     {} as { [date: string]: number }
   );
   const maxDate = _.maxBy(Object.keys(dayCounts), (d) => dayCounts[d]);
-  const maxDateMatches = _.filter(
-    matches,
+  const maxDateMatches = matches.filter(
     (m) => m.date.toDateString() == maxDate
   );
   const maxDateNet = _.sumBy(maxDateMatches, (m) =>
@@ -298,53 +326,72 @@ export function MOST_PLAYED(matches: Array<MatchData>): MostPlayedStatistics {
 
 export function ALL_ROUND_STATS(matches: Array<MatchData>): RoundStatistics {
   const roundCount = _.sumBy(matches, (m) => m.rounds.length);
-  const rounds = _.filter(
-    matches.flatMap((m) => m.rounds),
-    (r) =>
-      r["self-score"] == 11 ||
-      r["opponent-score"] == 11 ||
-      Math.abs(r["self-score"] - r["opponent-score"]) == 2
-  );
-  const roundsToOvertime = _.filter(
-    rounds,
+  const rounds = matches
+    .flatMap((m) => m.rounds)
+    .filter(
+      (r) =>
+        r["self-score"] == 11 ||
+        r["opponent-score"] == 11 ||
+        Math.abs(r["self-score"] - r["opponent-score"]) == 2
+    );
+  const roundsToOvertime = rounds.filter(
     (r) => r["self-score"] >= 12 || r["opponent-score"] >= 12
   );
-  const matchesTo3 = _.filter(matches, (m) => m.rounds.length > 2);
-  const matchesTo2 = _.filter(matches, (m) => m.rounds.length <= 2);
+  const matchesFirstRoundWon = matches.filter(
+    (m) => m.rounds.length > 1 && m.rounds[0].won
+  );
+  const matchesFirstRoundLost = matches.filter(
+    (m) => m.rounds.length > 1 && !m.rounds[0].won
+  );
+  const matchesTo3 = matches.filter((m) => m.rounds.length > 2);
+  const matchesTo2 = matches.filter((m) => m.rounds.length <= 2);
   const statistics: RoundStatistics = {
     matchesTo3: round(matchesTo3.length / matches.length, true),
     matchesTo3Won: round(
-      _.filter(matchesTo3, (m) => m.won).length / matchesTo3.length,
+      matchesTo3.filter((m) => m.won).length / matchesTo3.length,
       true
     ),
     roundsToOvertime: round(roundsToOvertime.length / roundCount, true),
     roundsToOvertimeWon: round(
-      _.filter(roundsToOvertime, (r) => r.won).length / roundsToOvertime.length,
+      roundsToOvertime.filter((r) => r.won).length / roundsToOvertime.length,
       true
     ),
     matchesTo2Won: round(
-      _.filter(matchesTo2, (m) => m.won).length / matchesTo2.length,
+      matchesTo2.filter((m) => m.won).length / matchesTo2.length,
       true
     ),
-    hardWonRounds: _.filter(rounds, (r) => r["opponent-score"] == 0).length,
+    hardWonRounds: rounds.filter((r) => r["opponent-score"] == 0).length,
     hardWonRoundsPercentage: round(
-      _.filter(rounds, (r) => r["opponent-score"] == 0).length / rounds.length,
+      rounds.filter((r) => r["opponent-score"] == 0).length / rounds.length,
       true
     ),
-    hardLostRounds: _.filter(rounds, (r) => r["self-score"] == 0).length,
+    hardLostRounds: rounds.filter((r) => r["self-score"] == 0).length,
     hardLostRoundsPercentage: round(
-      _.filter(rounds, (r) => r["self-score"] == 0).length / rounds.length,
+      rounds.filter((r) => r["self-score"] == 0).length / rounds.length,
       true
     ),
     longestRoundWon: _.maxBy(
-      _.filter(rounds, (r) => r.won),
+      rounds.filter((r) => r.won),
       (r) => r["self-score"] + r["opponent-score"]
     )!,
     longestRoundLost: _.maxBy(
-      _.filter(rounds, (r) => !r.won),
+      rounds.filter((r) => !r.won),
       (r) => r["self-score"] + r["opponent-score"]
     )!,
+    matchesFirstRoundWon: round(
+      matchesFirstRoundWon.filter((m) => m.won && m.rounds.length == 2).length /
+        matchesFirstRoundWon.length,
+      true
+    ),
+    matchesFirstRoundLost: round(
+      matchesFirstRoundLost.filter((m) => m.won).length /
+        matchesFirstRoundLost.length,
+      true
+    ),
   };
+  // console.log(matchesFirstRoundLost.filter((m) => m.won))
+  // console.log(matchesFirstRoundLost)
+  // console.log(matchesTo3)
   return statistics;
 }
 
