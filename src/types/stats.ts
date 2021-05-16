@@ -184,7 +184,7 @@ export interface PlayerData {
   userName: string;
   "current-elo": number;
   "match-elo": number;
-  "elo-gain-corrected": number,
+  "elo-gain": number;
   "elo-gain-formatted": string,
   rank: number;
   wins: number;

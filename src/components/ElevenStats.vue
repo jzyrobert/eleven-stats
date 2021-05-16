@@ -22,7 +22,7 @@
     </form>
     <div v-if="message">{{ message }}</div>
     <ProgressSpinner v-if="!loaded" />
-    <div v-if="loaded && matches.length == 0">
+    <div v-if="loaded && matches.length > 0 && filteredMatches.length == 0">
       Your selection does not match any matches!
     </div>
     <div v-if="matches.length > 0">
@@ -449,7 +449,7 @@
               <Card>
                 <template #title>Totally Real reasons you're losing</template>
                 <template #content>
-                  <vue3-chart-js v-bind="{ ...chartData }" />
+                  Work in Progress!
                 </template>
               </Card>
             </div>
@@ -465,7 +465,7 @@ import * as STATS from "../util/stats";
 import { processData, filterMatches } from "../util/util";
 // import * as SAMPLE from "../util/sample";
 // import * as SAMPLE_HUGE from "../util/sampleLarge";
-import * as SAMPLE_TEST from "../util/predator";
+// import * as SAMPLE_TEST from "../util/predator";
 import {
   Ref,
   ref,
@@ -493,7 +493,6 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import TabView from "primevue/tabview";
 import TabPanel from "primevue/tabpanel";
-import Vue3ChartJs from "@j-t-mcc/vue3-chartjs";
 
 export default defineComponent({
   name: "ElevenStats",
@@ -508,7 +507,6 @@ export default defineComponent({
     Column,
     TabView,
     TabPanel,
-    Vue3ChartJs,
   },
   setup() {
     const loaded = ref(true);
@@ -607,21 +605,21 @@ export default defineComponent({
       }
     });
 
-    onMounted(() => {
-      matches.value = processData(
-        // SAMPLE.SAMPLE_ID_BIG,
-        // SAMPLE.SAMPLE_MATCHES_BIG,
-        // SAMPLE.SAMPLE_ROUNDS_BIG
-        // SAMPLE_HUGE.SAMPLE_ID_HUGE,
-        // SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
-        // SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
-        SAMPLE_TEST.SAMPLE_ID_TEST,
-        SAMPLE_TEST.SAMPLE_MATCHES_TEST,
-        SAMPLE_TEST.SAMPLE_ROUNDS_TEST
-      );
-      startDate.value = earliestDate.value;
-      endDate.value = latestDate.value;
-    });
+    // onMounted(() => {
+    //   matches.value = processData(
+    //     // SAMPLE.SAMPLE_ID_BIG,
+    //     // SAMPLE.SAMPLE_MATCHES_BIG,
+    //     // SAMPLE.SAMPLE_ROUNDS_BIG
+    //     // SAMPLE_HUGE.SAMPLE_ID_HUGE,
+    //     // SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
+    //     // SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
+    //     SAMPLE_TEST.SAMPLE_ID_TEST,
+    //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
+    //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
+    //   );
+    //   startDate.value = earliestDate.value;
+    //   endDate.value = latestDate.value;
+    // });
 
     const chartData = ref({
       type: "pie",

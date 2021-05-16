@@ -6,7 +6,7 @@
     "strict": true,
     "jsx": "preserve",
     "importHelpers": true,
-    "isolatedModules": true,
+    // "isolatedModules": true,
     "noEmit": true,
     "sourceMap": true,
     "resolveJsonModule": true,
