@@ -195,36 +195,102 @@ export interface PlayerData {
   lastOnline: string;
 }
 
+export interface MatchStatistics {
+  won: number,
+  winrate: number,
+  average_elo: number,
+  average_elo_diff: number,
+  perDay: MatchDayStatistics,
+}
+
+export interface MatchupStatistics {
+  first: MatchData,
+  last: MatchData
+}
+
+export interface MatchDayStatistics {
+  average: number,
+  maxDate: Date,
+  maxPlayed: number,
+  maxWins: number,
+  maxNetElo: number,
+  maxStartElo: number,
+  maxEndElo: number
+}
+
+export interface PlayerStatistics {
+  unique_opponents: UniqueOpponentStatistics
+  opponent_winrate: number,
+  highestElo: MatchupStatistics,
+  highestEloNow: MatchupStatistics,
+  lowestElo: MatchupStatistics,
+  lowestEloNow: MatchupStatistics,
+  mostImproved: MatchupStatistics,
+  leastImproved: MatchupStatistics,
+  mostPlayed: MostPlayedStatistics,
+  mostWon: MostPlayedStatistics,
+  mostLost: MostPlayedStatistics
+}
+
+export interface UniqueOpponentStatistics {
+  winrate: number,
+  averageEloDiff: number,
+  uniqueCount: number,
+  neverWonCount: number,
+  neverLostCount: number,
+  playedOnceCount: number,
+  playedMoreCount: number
+}
+
+export interface RankedStatistics {
+  average_change: number,
+  average_gain: number,
+  average_loss: number,
+  total_change: number,
+  total_gain: number,
+  total_loss: number,
+  mostGained: GainStatistics,
+  mostLost: GainStatistics,
+  bestDay: DayStatistics,
+  worstDay: DayStatistics
+}
+
+export interface DayStatistics {
+  date: Dayjs,
+  played: number,
+  won: number,
+  gain: number,
+  startElo: number,
+  endElo: number
+}
+
+export interface GainStatistics {
+  username: string,
+  id: number,
+  gain: number
+}
+
 export interface RoundStatistics {
-  matchesTo3: string,
-  matchesTo3Won: string,
-  roundsToOvertime: string,
-  roundsToOvertimeWon: string,
-  matchesTo2Won: string,
+  matchesTo3: number,
+  matchesTo3Won: number,
+  roundsToOvertime: number,
+  roundsToOvertimeWon: number,
+  matchesTo2Won: number,
   hardWonRounds: number,
-  hardWonRoundsPercentage: string,
+  hardWonRoundsPercentage: number,
   hardLostRounds: number,
-  hardLostRoundsPercentage: string,
+  hardLostRoundsPercentage: number,
   longestRoundWon: RoundData,
   longestRoundLost: RoundData,
-  matchesFirstRoundWon: string,
-  matchesFirstRoundLost: string,
+  matchesFirstRoundWon: number,
+  matchesFirstRoundLost: number,
 }
 
 export interface MostPlayedStatistics {
-  mostPlayed: string,
-  mostPlayedGames: number,
-  mostPlayedWon: number,
-  mostPlayedEloChange: number,
-  mostPlayedData: Array<MatchData>,
-  mostWon: string,
-  mostWonGames: number,
-  mostWonWon: number,
-  mostWonEloChange: number,
-  mostWonData: Array<MatchData>,
-  mostLost: string,
-  mostLostGames: number,
-  mostLostLost: number,
-  mostLostEloChange: number,
-  mostLostData: Array<MatchData>
+  username: string,
+  id: number,
+  matches: number,
+  won: number,
+  gain: number,
+  data: Array<MatchData>
 }

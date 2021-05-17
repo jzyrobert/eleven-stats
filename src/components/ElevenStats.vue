@@ -97,38 +97,65 @@
                 <template #title>Matches</template>
                 <template #content>
                   <p>
-                    You <b>won</b> {{ STATS["WINS"](filteredMatches) }} out of
+                    You <b>won</b> {{ all_match_stats.won }} out of
                     {{ matchNumber }} matches, a <b>winrate</b> of
-                    {{ STATS["WINRATE"](filteredMatches) }}%
+                    {{ all_match_stats.winrate }}%
                   </p>
                   <p>
                     In that time, you played
-                    {{ unique_opponents.uniqueCount }} <b>unique</b>
+                    <b
+                      >{{
+                        all_player_stats.unique_opponents.uniqueCount
+                      }}
+                      unique</b
+                    >
                     opponents.
                   </p>
                   <p>
-                    You played an average of {{ matchCounts.average }} matches
-                    per day, counting <b>only</b> days you played.
+                    You played an <b>average</b> of
+                    <b>{{ all_match_stats.perDay.average }}</b> matches per day,
+                    counting <b>only</b> days you played.
                   </p>
                 </template>
               </Card>
             </div>
-            <div class="cardbox p-col-12 p-md-6 p-lg-3">
+            <div
+              v-if="all_match_stats.perDay.maxPlayed <= 5"
+              class="cardbox p-col-12 p-md-6 p-lg-3"
+            >
+              <Card class="p-p-4">
+                <template #title>Step it up</template>
+                <template #content>
+                  <p>You have never played more than 5 matches on any day!</p>
+                </template>
+              </Card>
+            </div>
+            <div
+              v-if="all_match_stats.perDay.maxPlayed > 5"
+              class="cardbox p-col-12 p-md-6 p-lg-3"
+            >
               <Card class="p-p-4">
                 <template #title>Marathon day</template>
                 <template #content>
                   <p>
                     The <b>most</b> matches you played was on
-                    {{ matchCounts.maxDate.toDateString() }}, with an impressive
-                    <b>{{ matchCounts.max }}</b> matches.
+                    {{
+                      dayjs(all_match_stats.perDay.maxDate).format(
+                        "YYYY-MM-DD"
+                      )
+                    }}, with an impressive
+                    <b>{{ all_match_stats.perDay.maxPlayed }}</b> matches.
                   </p>
                   <p>
-                    Of those, you <b>won</b> {{ matchCounts.maxDateWins }}, with
-                    a net ELO change of {{ matchCounts.maxDateElo }}.
+                    Of those, you <b>won</b>
+                    {{ all_match_stats.perDay.maxWins }}, with a net ELO change
+                    of <b>{{ all_match_stats.perDay.maxNetElo }}</b
+                    >.
                   </p>
                   <p>
-                    You started the day with {{ matchCounts.maxDateStart }} ELO
-                    and ended with {{ matchCounts.maxDateEnd }} ELO
+                    You started the day with
+                    <b>{{ all_match_stats.perDay.maxStartElo }}</b> ELO and
+                    ended with <b>{{ all_match_stats.perDay.maxEndElo }}</b> ELO
                   </p>
                 </template>
               </Card>
@@ -148,26 +175,75 @@
                 </template>
               </Card>
             </div>
+            <div
+              v-if="ranked !== 'unranked'"
+              class="cardbox p-col-12 p-md-6 p-lg-3"
+            >
+              <Card class="p-p-4">
+                <template #title> Good days and bad days </template>
+                <template #content>
+                  <p>
+                    You <b>gained</b> the most ELO on
+                    <b>{{
+                      all_ranked_stats.bestDay.date.format("YYYY-MM-DD")
+                    }}</b
+                    >. Starting at <b>{{ all_ranked_stats.bestDay.startElo }}</b
+                    >, you gained <b>{{ all_ranked_stats.bestDay.gain }}</b> ELO
+                    over {{ all_ranked_stats.bestDay.played }} matches, winning
+                    {{ all_ranked_stats.bestDay.won }} and finishing at
+                    <b>{{ all_ranked_stats.bestDay.endElo }}</b
+                    >.
+                  </p>
+                  <p v-if="all_ranked_stats.worstDay.gain < 0">
+                    You <b>lost</b> the most ELO on
+                    <b>{{
+                      all_ranked_stats.worstDay.date.format("YYYY-MM-DD")
+                    }}</b
+                    >. Starting at
+                    <b>{{ all_ranked_stats.worstDay.startElo }}</b
+                    >, you lost <b>{{ all_ranked_stats.worstDay.gain }}</b> ELO
+                    over {{ all_ranked_stats.worstDay.played }} matches, winning
+                    {{ all_ranked_stats.worstDay.won }} and finishing at
+                    <b>{{ all_ranked_stats.worstDay.endElo }}</b
+                    >.
+                  </p>
+                  <p v-if="all_ranked_stats.worstDay.gain >= 0">
+                    Wow, you have <b>never</b> ended a day with a net loss! You
+                    gained the <b>least</b> ELO on
+                    {{ all_ranked_stats.worstDay.date.format("YYYY-MM-DD") }}.
+                    Starting at <b>{{ all_ranked_stats.worstDay.startElo }}</b
+                    >, you gained
+                    <b>{{ all_ranked_stats.worstDay.gain }}</b> ELO over
+                    {{ all_ranked_stats.worstDay.played }} matches, winning
+                    {{ all_ranked_stats.worstDay.won }} and finishing at
+                    <b>{{ all_ranked_stats.worstDay.endElo }}</b
+                    >.
+                  </p>
+                </template>
+              </Card>
+            </div>
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
               <Card class="p-p-4">
                 <template #title> Average opponent </template>
                 <template #content>
                   <p>
                     At match time, your <b>average</b> opponent ELO was
-                    {{ STATS["AVERAGE_ELO_MATCH"](filteredMatches) }}
+                    <b>{{ all_match_stats.average_elo }}</b>
                   </p>
                   <p>
                     On average, you played opponents
-                    {{ Math.abs(average_elo_diff) }} ELO
-                    <b>{{ average_elo_diff > 0 ? "below" : "above" }}</b>
+                    <b>{{ Math.abs(all_match_stats.average_elo_diff) }}</b> ELO
+                    <b>{{
+                      all_match_stats.average_elo_diff > 0 ? "below" : "above"
+                    }}</b>
                     yourself.
                   </p>
                   <p>
                     On average, your opponents have a winrate of
-                    {{ STATS["AVERAGE_OPPONENT_WINRATE"](filteredMatches) }}%
-                    ({{
-                      STATS["AVERAGE_OPPONENT_WINRATE_UNIQUE"](filteredMatches)
-                    }}% unique)
+                    <b>{{ all_player_stats.opponent_winrate }}%</b> (<b
+                      >{{ all_player_stats.unique_opponents.winrate }}%</b
+                    >
+                    unique)
                   </p>
                 </template>
               </Card>
@@ -180,20 +256,30 @@
                     If you were to play each opponent <b>once</b> again, their
                     <b>average</b> ELO would be
                     {{ STATS["AVERAGE_ELO_UNIQUE"](filteredMatches) }}, putting
-                    you {{ average_elo_diff_unique }} ELO
-                    {{ average_elo_diff_unique > 0 ? "above" : "below" }} them.
-                  </p>
-                  <p>
-                    Of those {{ unique_opponents.uniqueCount }}, you have
-                    <b>never lost</b> to
-                    {{ unique_opponents.neverLostCount }} and
-                    <b>never won</b> to {{ unique_opponents.neverWonCount }} of
+                    you
+                    {{ all_player_stats.unique_opponents.averageEloDiff }} ELO
+                    {{
+                      all_player_stats.unique_opponents.averageEloDiff > 0
+                        ? "above"
+                        : "below"
+                    }}
                     them.
                   </p>
                   <p>
-                    You have played {{ unique_opponents.playedOnceCount }}
+                    Of those
+                    {{ all_player_stats.unique_opponents.uniqueCount }}, you
+                    have <b>never lost</b> to
+                    {{ all_player_stats.unique_opponents.neverLostCount }} and
+                    <b>never won</b> to
+                    {{ all_player_stats.unique_opponents.neverWonCount }} of
+                    them.
+                  </p>
+                  <p>
+                    You have played
+                    {{ all_player_stats.unique_opponents.playedOnceCount }}
                     <b>only once</b>, and
-                    {{ unique_opponents.playedMoreCount }} <b>at least 5</b>
+                    {{ all_player_stats.unique_opponents.playedMoreCount }}
+                    <b>at least 5</b>
                     times.
                   </p>
                 </template>
@@ -202,67 +288,131 @@
             <div class="cardbox p-col-12 p-md-6 p-lg-3">
               <Card class="p-p-4">
                 <template #title
-                  >Final boss? <Avatar style="vertical-align: middle" size="xlarge" image="src/assets/cat.png"
+                  >Final boss?
+                  <Avatar
+                    v-if="
+                      all_player_stats.highestElo.last.opponent['match-elo'] >
+                      3100
+                    "
+                    style="vertical-align: middle"
+                    size="xlarge"
+                    image="./cat.png"
                 /></template>
                 <template #content>
                   <p>
                     The <b>highest</b> ELO opponent you played was
-                    {{ highest_match_last.opponent.userName }} ({{
-                      highest_match_last.opponent.id
-                    }}) at {{ highest_match_last.opponent["match-elo"] }}.
+                    {{ all_player_stats.highestElo.last.opponent.userName }} ({{
+                      all_player_stats.highestElo.last.opponent.id
+                    }}) at
+                    <b>{{
+                      all_player_stats.highestElo.last.opponent["match-elo"]
+                    }}</b
+                    >.
                   </p>
                   <p>
-                    You were {{ highest_match_last.self["match-elo"] }} ({{
-                      highest_match_last["elo-diff-formatted"]
+                    You were
+                    <b>{{
+                      all_player_stats.highestElo.last.self["match-elo"]
+                    }}</b>
+                    ({{
+                      all_player_stats.highestElo.last["elo-diff-formatted"]
                     }}) and they are now
-                    {{ highest_match_last.opponent["current-elo"] }}
+                    <b>{{
+                      all_player_stats.highestElo.last.opponent["current-elo"]
+                    }}</b>
                   </p>
                   <p>
                     You
-                    <b>{{ highest_match_last.won ? "won" : "lost" }}</b> with a
-                    score of {{ formatScore(highest_match_last) }}
+                    <b>{{
+                      all_player_stats.highestElo.last.won ? "won" : "lost"
+                    }}</b>
+                    with a score of
+                    {{ formatScore(all_player_stats.highestElo.last) }}
                   </p>
-                  <p v-if="highest_match_first.id != highest_match_last.id">
-                    Your first match against
-                    {{ highest_match_first.opponent.userName }} was at
-                    {{ highest_match_first.self["match-elo"] }}-{{
-                      highest_match_first.opponent["match-elo"]
+                  <p
+                    v-if="
+                      all_player_stats.highestElo.first.id !=
+                      all_player_stats.highestElo.last.id
+                    "
+                  >
+                    Your <b>first</b> match against
+                    {{ all_player_stats.highestElo.first.opponent.userName }}
+                    was at
+                    {{ all_player_stats.highestElo.first.self["match-elo"] }}-{{
+                      all_player_stats.highestElo.first.opponent["match-elo"]
                     }}. You
-                    <b>{{ highest_match_first.won ? "won" : "lost" }}</b> with a
-                    score of {{ formatScore(highest_match_first) }}
+                    <b>{{
+                      all_player_stats.highestElo.first.won ? "won" : "lost"
+                    }}</b>
+                    with a score of
+                    {{ formatScore(all_player_stats.highestElo.first) }}
                   </p>
                 </template>
               </Card>
             </div>
-            <div class="cardbox p-col-12 p-md-6 p-lg-3">
+            <div
+              v-if="
+                all_player_stats.highestEloNow.last.opponent.id !==
+                all_player_stats.highestElo.last.opponent.id
+              "
+              class="cardbox p-col-12 p-md-6 p-lg-3"
+            >
               <Card class="p-p-4">
                 <template #title>Hidden Boss</template>
                 <template #content>
                   <p>
                     The <b>highest</b> ELO opponent <b>now</b> would be
-                    {{ highest_now_last.opponent.userName }} ({{
-                      highest_now_last.opponent.id
-                    }}) at {{ highest_now_last.opponent["current-elo"] }}.
+                    {{ all_player_stats.highestEloNow.last.opponent.userName }}
+                    ({{ all_player_stats.highestEloNow.last.opponent.id }}) at
+                    <b>{{
+                      all_player_stats.highestEloNow.last.opponent[
+                        "current-elo"
+                      ]
+                    }}</b
+                    >.
                   </p>
                   <p>
-                    You were {{ highest_now_last.self["match-elo"] }} ({{
-                      highest_now_last["elo-diff-formatted"]
+                    You were
+                    <b>{{
+                      all_player_stats.highestEloNow.last.self["match-elo"]
+                    }}</b>
+                    ({{
+                      all_player_stats.highestEloNow.last["elo-diff-formatted"]
                     }}) and they were
-                    {{ highest_now_last.opponent["match-elo"] }} when you last
-                    played them.
+                    <b>{{
+                      all_player_stats.highestEloNow.last.opponent["match-elo"]
+                    }}</b>
+                    when you last played them.
                   </p>
                   <p>
-                    You <b>{{ highest_now_last.won ? "won" : "lost" }}</b> with
-                    a score of {{ formatScore(highest_now_last) }}
+                    You
+                    <b>{{
+                      all_player_stats.highestEloNow.last.won ? "won" : "lost"
+                    }}</b>
+                    with a score of
+                    {{ formatScore(all_player_stats.highestEloNow.last) }}
                   </p>
-                  <p v-if="highest_now_first.id != highest_now_last.id">
+                  <p
+                    v-if="
+                      all_player_stats.highestEloNow.first.id !=
+                      all_player_stats.highestEloNow.last.id
+                    "
+                  >
                     Your first match against
-                    {{ highest_now_first.opponent.userName }} was at
-                    {{ highest_now_first.self["match-elo"] }}-{{
-                      highest_now_first.opponent["match-elo"]
+                    {{ all_player_stats.highestEloNow.first.opponent.userName }}
+                    was at
+                    {{
+                      all_player_stats.highestEloNow.first.self["match-elo"]
+                    }}-{{
+                      all_player_stats.highestEloNow.first.opponent[
+                        "match-elo"
+                      ]
                     }}. You
-                    <b>{{ highest_now_first.won ? "won" : "lost" }}</b> with a
-                    score of {{ formatScore(highest_now_first) }}
+                    <b>{{
+                      all_player_stats.highestEloNow.first.won ? "won" : "lost"
+                    }}</b>
+                    with a score of
+                    {{ formatScore(all_player_stats.highestEloNow.first) }}
                   </p>
                 </template>
               </Card>
@@ -273,45 +423,76 @@
                 <template #content>
                   <p>
                     The <b>lowest</b> ELO opponent you played was
-                    {{ lowest_match.opponent.userName }} ({{
-                      lowest_match.opponent.id
-                    }}) at {{ lowest_match.opponent["match-elo"] }}.
+                    {{ all_player_stats.lowestElo.last.opponent.userName }} ({{
+                      all_player_stats.lowestElo.last.opponent.id
+                    }}) at
+                    <b>{{
+                      all_player_stats.lowestElo.last.opponent["match-elo"]
+                    }}</b
+                    >.
                   </p>
                   <p>
-                    You were {{ lowest_match.self["match-elo"] }} ({{
-                      lowest_match["elo-diff-formatted"]
+                    You were
+                    <b>{{
+                      all_player_stats.lowestElo.last.self["match-elo"]
+                    }}</b>
+                    ({{
+                      all_player_stats.lowestElo.last["elo-diff-formatted"]
                     }}) and they are now
-                    {{ lowest_match.opponent["current-elo"] }}
+                    <b>{{
+                      all_player_stats.lowestElo.last.opponent["current-elo"]
+                    }}</b>
                   </p>
                   <p>
-                    You <b>{{ lowest_match.won ? "won" : "lost" }}</b> with a
-                    score of {{ formatScore(lowest_match) }}
+                    You
+                    <b>{{
+                      all_player_stats.lowestElo.last.won ? "won" : "lost"
+                    }}</b>
+                    with a score of
+                    {{ formatScore(all_player_stats.lowestElo.last) }}
                   </p>
                 </template>
               </Card>
             </div>
-
-            <div class="cardbox p-col-12 p-md-6 p-lg-3">
+            <div
+              v-if="
+                all_player_stats.lowestEloNow.last.opponent.id !=
+                all_player_stats.lowestElo.last.opponent.id
+              "
+              class="cardbox p-col-12 p-md-6 p-lg-3"
+            >
               <Card class="p-p-4">
                 <template #title>Can it get worse?</template>
                 <template #content>
                   <p>
                     The <b>lowest</b> ELO opponent <b>now</b> would be
-                    {{ lowest_now.opponent.userName }} ({{
-                      lowest_now.opponent.id
-                    }}) at {{ lowest_now.opponent["current-elo"] }}.
+                    {{ all_player_stats.lowestEloNow.last.opponent.userName }}
+                    ({{ all_player_stats.lowestEloNow.last.opponent.id }}) at
+                    <b>{{
+                      all_player_stats.lowestEloNow.last.opponent["current-elo"]
+                    }}</b
+                    >.
                   </p>
                   <p>
-                    You were {{ lowest_now.self["match-elo"] }} ({{
-                      lowest_now["elo-diff-formatted"]
+                    You were
+                    <b>{{
+                      all_player_stats.lowestEloNow.last.self["match-elo"]
+                    }}</b>
+                    ({{
+                      all_player_stats.lowestEloNow.last["elo-diff-formatted"]
                     }}) and they were
-                    {{ lowest_now.opponent["match-elo"] }} when you
-                    <b>first</b> played
+                    <b>{{
+                      all_player_stats.lowestEloNow.last.opponent["match-elo"]
+                    }}</b>
+                    when you <b>first</b> played
                   </p>
                   <p>
-                    You <b>{{ lowest_now.won ? "won" : "lost" }}</b> with a
-                    score of
-                    {{ formatScore(lowest_now) }}
+                    You
+                    <b>{{
+                      all_player_stats.lowestEloNow.last.won ? "won" : "lost"
+                    }}</b>
+                    with a score of
+                    {{ formatScore(all_player_stats.lowestEloNow.last) }}
                   </p>
                 </template>
               </Card>
@@ -322,45 +503,65 @@
                 <template #content>
                   <div v-if="ranked === 'unranked'">
                     <p>
-                      <b>Most</b> matches: {{ most_played.mostPlayed }} ({{
-                        most_played.mostPlayedData[0].opponent.id
-                      }}) with {{ most_played.mostPlayedGames }} matches,
-                      winning {{ most_played.mostPlayedWon }}.
+                      <b>Most</b> matches:
+                      {{ all_player_stats.mostPlayed.username }} ({{
+                        all_player_stats.mostPlayed.id
+                      }}) with
+                      <b>{{ all_player_stats.mostPlayed.matches }}</b> matches,
+                      winning {{ all_player_stats.mostPlayed.won }}.
                     </p>
                     <p>
-                      Most <b>wins</b>: {{ most_played.mostWon }} ({{
-                        most_played.mostWonData[0].opponent.id
-                      }}) with {{ most_played.mostWonGames }} matches, winning
-                      {{ most_played.mostWonWon }}.
+                      Most <b>wins</b>:
+                      {{ all_player_stats.mostWon.username }} ({{
+                        all_player_stats.mostWon.id
+                      }}) with
+                      <b>{{ all_player_stats.mostWon.matches }}</b> matches,
+                      winning {{ all_player_stats.mostWon.won }}.
                     </p>
                     <p>
-                      Most <b>losses</b>: {{ most_played.mostLost }} ({{
-                        most_played.mostLostData[0].opponent.id
-                      }}) with {{ most_played.mostLostGames }} matches, losing
-                      {{ most_played.mostLostLost }}.
+                      Most <b>losses</b>:
+                      {{ all_player_stats.mostLost.username }} ({{
+                        all_player_stats.mostLost.id
+                      }}) with
+                      <b>{{ all_player_stats.mostLost.matches }}</b> matches,
+                      losing
+                      {{
+                        all_player_stats.mostLost.matches -
+                        all_player_stats.mostLost.won
+                      }}.
                     </p>
                   </div>
                   <div v-if="ranked !== 'unranked'">
                     <p>
-                      <b>Most</b> matches: {{ most_played.mostPlayed }} ({{
-                        most_played.mostPlayedData[0].opponent.id
-                      }}) with {{ most_played.mostPlayedGames }} matches,
-                      winning {{ most_played.mostPlayedWon }}, with a net ELO
-                      change of {{ most_played.mostPlayedEloChange }}.
+                      <b>Most</b> matches:
+                      {{ all_player_stats.mostPlayed.username }} ({{
+                        all_player_stats.mostPlayed.id
+                      }}) with
+                      <b>{{ all_player_stats.mostPlayed.matches }}</b> matches,
+                      winning {{ all_player_stats.mostPlayed.won }}, with a net
+                      ELO change of {{ all_player_stats.mostPlayed.gain }}.
                     </p>
                     <p>
-                      Most <b>wins</b>: {{ most_played.mostWon }} ({{
-                        most_played.mostWonData[0].opponent.id
-                      }}) with {{ most_played.mostWonGames }} matches, winning
-                      {{ most_played.mostWonWon }}, with a net ELO change of
-                      {{ most_played.mostWonEloChange }}.
+                      Most <b>wins</b>:
+                      {{ all_player_stats.mostWon.username }} ({{
+                        all_player_stats.mostWon.id
+                      }}) with
+                      <b>{{ all_player_stats.mostWon.matches }}</b> matches,
+                      winning {{ all_player_stats.mostWon.won }}, with a net ELO
+                      change of {{ all_player_stats.mostWon.gain }}.
                     </p>
                     <p>
-                      Most <b>losses</b>: {{ most_played.mostLost }} ({{
-                        most_played.mostLostData[0].opponent.id
-                      }}) with {{ most_played.mostLostGames }} matches, losing
-                      {{ most_played.mostLostLost }}, with a net ELO change of
-                      {{ most_played.mostLostEloChange }}.
+                      Most <b>losses</b>:
+                      {{ all_player_stats.mostLost.username }} ({{
+                        all_player_stats.mostLost.id
+                      }}) with
+                      <b>{{ all_player_stats.mostLost.matches }}</b> matches,
+                      losing
+                      {{
+                        all_player_stats.mostLost.matches -
+                        all_player_stats.mostLost.won
+                      }}, with a net ELO change of
+                      {{ all_player_stats.mostLost.gain }}.
                     </p>
                   </div>
                 </template>
@@ -372,26 +573,45 @@
                 <template #content>
                   The opponent who <b>most improved</b> since you
                   <b>first</b> played them is
-                  {{ most_improved.firstGame.opponent.userName }} ({{
-                    most_improved.firstGame.opponent.id
-                  }})
+                  {{ all_player_stats.mostImproved.first.opponent.userName }}
+                  ({{ all_player_stats.mostImproved.first.opponent.id }})
                   <p>
-                    You were {{ most_improved.firstGame.self["match-elo"] }} ({{
-                      most_improved.firstGame["elo-diff-formatted"]
+                    You were
+                    <b>{{
+                      all_player_stats.mostImproved.first.self["match-elo"]
+                    }}</b>
+                    ({{
+                      all_player_stats.mostImproved.first["elo-diff-formatted"]
                     }}) and they were
-                    {{ most_improved.firstGame.opponent["match-elo"] }} when you
-                    <b>first</b> played
+                    <b>{{
+                      all_player_stats.mostImproved.first.opponent["match-elo"]
+                    }}</b>
+                    when you <b>first</b> played
                   </p>
                   <p>
                     They have since <b>risen</b> to
-                    {{ most_improved.firstGame.opponent["current-elo"] }} ({{
-                      most_improved.firstGame.opponent["elo-gain-formatted"]
+                    <b>{{
+                      all_player_stats.mostImproved.first.opponent[
+                        "current-elo"
+                      ]
+                    }}</b>
+                    ({{
+                      all_player_stats.mostImproved.first.opponent[
+                        "elo-gain-formatted"
+                      ]
                     }})
                   </p>
-                  <p v-if="most_improved.lastGame">
+                  <p
+                    v-if="
+                      all_player_stats.mostImproved.last.id !=
+                      all_player_stats.mostImproved.first.id
+                    "
+                  >
                     You last played at
-                    {{ most_improved.lastGame.self["match-elo"] }}-{{
-                      most_improved.lastGame.opponent["match-elo"]
+                    {{
+                      all_player_stats.mostImproved.last.self["match-elo"]
+                    }}-{{
+                      all_player_stats.mostImproved.last.opponent["match-elo"]
                     }}.
                   </p>
                 </template>
@@ -403,21 +623,36 @@
                 <template #content>
                   The opponent who <b>declined most</b> since you
                   <b>first</b> played them is
-                  {{ least_improved.opponent.userName }} ({{
-                    least_improved.opponent.id
-                  }})
+                  {{ all_player_stats.leastImproved.first.opponent.userName }}
+                  ({{ all_player_stats.leastImproved.first.opponent.id }})
                   <p>
-                    You were {{ least_improved.self["match-elo"] }} ({{
-                      least_improved["elo-diff-formatted"]
+                    You were
+                    <b>{{
+                      all_player_stats.leastImproved.first.self["match-elo"]
+                    }}</b>
+                    ({{
+                      all_player_stats.leastImproved.first[
+                        "elo-diff-formatted"
+                      ]
                     }}) and they were
-                    {{ least_improved.opponent["match-elo"] }} when you
+                    <b>{{
+                      all_player_stats.leastImproved.first.opponent["match-elo"]
+                    }}</b>
+                    when you
                     <b>first</b>
                     played
                   </p>
                   <p>
                     They have since <b>fallen</b> to
-                    {{ least_improved.opponent["current-elo"] }} ({{
-                      least_improved.opponent["elo-gain-formatted"]
+                    <b>{{
+                      all_player_stats.leastImproved.first.opponent[
+                        "current-elo"
+                      ]
+                    }}</b>
+                    ({{
+                      all_player_stats.leastImproved.first.opponent[
+                        "elo-gain-formatted"
+                      ]
                     }})
                   </p>
                 </template>
@@ -431,16 +666,18 @@
                 <template #title>Grand Theft ELO</template>
                 <template #content>
                   <p>
-                    The most ELO you gained is from
-                    {{ most_gained_lost.maxName }} ({{
-                      most_gained_lost.maxId
-                    }}), taking a net {{ most_gained_lost.maxGain }} from them.
+                    The most ELO you <b>gained</b> is from
+                    {{ all_ranked_stats.mostGained.username }} ({{
+                      all_ranked_stats.mostGained.id
+                    }}), taking a net
+                    <b>{{ all_ranked_stats.mostGained.gain }}</b> from them.
                   </p>
                   <p>
-                    The most ELO you lost is to
-                    {{ most_gained_lost.minName }} ({{
-                      most_gained_lost.minId
-                    }}), losing a net {{ most_gained_lost.minGain }} to them.
+                    The most ELO you <b>lost</b> is to
+                    {{ all_ranked_stats.mostLost.username }} ({{
+                      all_ranked_stats.mostLost.id
+                    }}), losing a net
+                    <b>{{ all_ranked_stats.mostLost.gain }}</b> to them.
                   </p>
                 </template>
               </Card>
@@ -450,14 +687,14 @@
                 <template #title>Last chance</template>
                 <template #content>
                   <p>
-                    {{ all_round_stats.matchesTo3 }}% of your matches go to
-                    <b>round 3</b>. Of those, you won
-                    {{ all_round_stats.matchesTo3Won }}%.
+                    <b>{{ all_round_stats.matchesTo3 }}%</b> of your matches go
+                    to <b>round 3</b>. Of those, you won
+                    <b>{{ all_round_stats.matchesTo3Won }}%</b>.
                   </p>
                   <p>
-                    {{ all_round_stats.roundsToOvertime }}% of your rounds go
-                    <b>beyond</b> 11 points. Of those, you won
-                    {{ all_round_stats.roundsToOvertimeWon }}%.
+                    <b>{{ all_round_stats.roundsToOvertime }}%</b> of your
+                    rounds go <b>beyond</b> 11 points. Of those, you won
+                    <b> {{ all_round_stats.roundsToOvertimeWon }}%</b>.
                   </p>
                 </template>
               </Card>
@@ -469,15 +706,16 @@
                   <p>
                     Of the remaining
                     {{ 100 - Number(all_round_stats.matchesTo3) }}% matches that
-                    end in 2 rounds (or less??), you won
-                    {{ all_round_stats.matchesTo2Won }}% of them.
+                    end in <b>2 rounds</b> (or less??), you won
+                    <b>{{ all_round_stats.matchesTo2Won }}%</b> of them.
                   </p>
                   <p>
-                    You won {{ all_round_stats.hardWonRounds }} ({{
+                    You won <b>{{ all_round_stats.hardWonRounds }}</b> ({{
                       all_round_stats.hardWonRoundsPercentage
-                    }}%) and lost {{ all_round_stats.hardLostRounds }} ({{
+                    }}%) and lost
+                    <b>{{ all_round_stats.hardLostRounds }}</b> ({{
                       all_round_stats.hardLostRoundsPercentage
-                    }}%) of your rounds 11-0.
+                    }}%) of your rounds <b>11-0</b>.
                   </p>
                 </template>
               </Card>
@@ -488,13 +726,13 @@
                 <template #content>
                   <p>
                     In matches where you <b>win</b> the <b>first</b> round,
-                    {{ all_round_stats.matchesFirstRoundWon }}% of them you win
-                    in 2 rounds.
+                    <b>{{ all_round_stats.matchesFirstRoundWon }}%</b> of them
+                    you win in 2 rounds.
                   </p>
                   <p>
                     In matches where you <b>lose</b> the <b>first</b> round,
-                    {{ all_round_stats.matchesFirstRoundLost }}% result in a
-                    comeback win.
+                    <b>{{ all_round_stats.matchesFirstRoundLost }}%</b> result
+                    in a comeback win.
                   </p>
                 </template>
               </Card>
@@ -504,15 +742,19 @@
                 <template #title>Ping-Pong</template>
                 <template #content>
                   <p>
-                    The longest round you won ended in
-                    {{ all_round_stats.longestRoundWon["score-formatted"] }}
+                    The <b>longest</b> round you <b>won</b> ended in
+                    <b>{{
+                      all_round_stats.longestRoundWon["score-formatted"]
+                    }}</b>
                     against
                     {{ all_round_stats.longestRoundWon["opponent-username"] }}
                     ({{ all_round_stats.longestRoundWon["opponent-id"] }})
                   </p>
                   <p>
-                    The longest round you lost ended in
-                    {{ all_round_stats.longestRoundLost["score-formatted"] }}
+                    The <b>longest</b> round you <b>lost</b> ended in
+                    <b>{{
+                      all_round_stats.longestRoundLost["score-formatted"]
+                    }}</b>
                     against
                     {{ all_round_stats.longestRoundLost["opponent-username"] }}
                     ({{ all_round_stats.longestRoundLost["opponent-id"] }})
@@ -555,8 +797,11 @@ import {
   Higher,
   Home,
   MatchData,
+  MatchStatistics,
   MostPlayedStatistics,
+  PlayerStatistics,
   Ranked,
+  RankedStatistics,
   RoundStatistics,
 } from "../types/statTypes";
 import dayjs from "dayjs";
@@ -757,93 +1002,36 @@ export default defineComponent({
     formatDetailsHTML(): string {
       return `You selected ${this.details}`;
     },
-    matchCounts(): {
-      average: string;
-      maxDate: Date;
-      max: number;
-      maxDateElo: number;
-      maxDateWins: number;
-      maxDateStart: number;
-      maxDateEnd: number;
-    } {
-      return STATS["MATCHES_DAY"](this.filteredMatches);
+    all_match_stats(): MatchStatistics {
+      return STATS.ALL_MATCH_STATS(this.filteredMatches);
+    },
+    all_ranked_stats(): RankedStatistics {
+      return STATS.ALL_RANKED_STATS(this.filteredMatches);
+    },
+    all_player_stats(): PlayerStatistics {
+      return STATS.ALL_PLAYER_STATS(this.filteredMatches);
+    },
+    all_round_stats(): RoundStatistics {
+      return STATS.ALL_ROUND_STATS(this.filteredMatches);
     },
     gains(): Array<Object> {
       return [
         {
           type: "Gain",
-          average: STATS["AVERAGE_GAIN"](this.filteredMatches),
-          total: STATS["TOTAL_GAIN"](this.filteredMatches),
+          average: this.all_ranked_stats.average_gain,
+          total: this.all_ranked_stats.total_gain,
         },
         {
           type: "Loss",
-          average: STATS["AVERAGE_LOSS"](this.filteredMatches),
-          total: STATS["TOTAL_LOSS"](this.filteredMatches),
+          average: this.all_ranked_stats.average_loss,
+          total: this.all_ranked_stats.total_loss,
         },
         {
           type: "Net",
-          average: STATS["AVERAGE_CHANGE"](this.filteredMatches),
-          total: STATS["TOTAL_CHANGE"](this.filteredMatches),
+          average: this.all_ranked_stats.average_change,
+          total: this.all_ranked_stats.total_change,
         },
       ];
-    },
-    average_elo_diff(): number {
-      return STATS.AVERAGE_ELO_DIFF_MATCH(this.filteredMatches);
-    },
-    average_elo_diff_unique(): number {
-      return STATS["AVERAGE_ELO_DIFF_UNIQUE"](this.filteredMatches);
-    },
-    highest_match_last(): MatchData {
-      return STATS.HIGHEST_MATCH(this.filteredMatches)!.last;
-    },
-    highest_match_first(): MatchData {
-      return STATS.HIGHEST_MATCH(this.filteredMatches)!.first;
-    },
-    highest_now_last(): MatchData {
-      return STATS.HIGHEST_NOW(this.filteredMatches)!.last;
-    },
-    highest_now_first(): MatchData {
-      return STATS.HIGHEST_NOW(this.filteredMatches)!.first;
-    },
-    lowest_match(): MatchData {
-      return STATS.LOWEST_MATCH(this.filteredMatches)!;
-    },
-    lowest_now(): MatchData {
-      return STATS.LOWEST_NOW(this.filteredMatches)!;
-    },
-    most_improved(): {
-      firstGame: MatchData;
-      lastGame: MatchData | undefined;
-    } {
-      return STATS.MOST_IMPROVED(this.filteredMatches)!;
-    },
-    least_improved(): MatchData {
-      return STATS.LEAST_IMPROVED(this.filteredMatches)!;
-    },
-    most_gained_lost(): {
-      maxName: string;
-      maxId: number;
-      maxGain: number;
-      minName: string;
-      minId: number;
-      minGain: number;
-    } {
-      return STATS.MOST_ELO_GAINED_LOST(this.filteredMatches);
-    },
-    most_played(): MostPlayedStatistics {
-      return STATS.MOST_PLAYED(this.filteredMatches);
-    },
-    all_round_stats(): RoundStatistics {
-      return STATS.ALL_ROUND_STATS(this.filteredMatches);
-    },
-    unique_opponents(): {
-      uniqueCount: number;
-      neverWonCount: number;
-      neverLostCount: number;
-      playedOnceCount: number;
-      playedMoreCount: number;
-    } {
-      return STATS.UNIQUE_OPPONENTS(this.filteredMatches);
     },
   },
   watch: {
@@ -859,6 +1047,7 @@ export default defineComponent({
     },
   },
   methods: {
+    dayjs: dayjs,
     resetName() {
       this.name = "";
     },
