@@ -164,7 +164,7 @@ export interface MatchData {
   "elo-diff-now": number,
   "elo-diff-now-formatted": string,
   "elo-change": number;
-  // "elo-change-corrected": number,
+  "elo-change-corrected": number,
   // "elo-change-formatted": string,
   date: Dayjs;
   offsetDate: Dayjs;
@@ -271,6 +271,12 @@ export interface GainStatistics {
 }
 
 export interface RoundStatistics {
+  roundsPlayed: number,
+  roundsWon: number,
+  roundsWinrate: number,
+  averageRounds: number,
+  averageRoundsWon: number,
+  averageRoundsLost: number,
   matchesTo3: number,
   matchesTo3Won: number,
   roundsToOvertime: number,
@@ -284,6 +290,7 @@ export interface RoundStatistics {
   longestRoundLost: RoundData,
   matchesFirstRoundWon: number,
   matchesFirstRoundLost: number,
+  incompleteRounds: number,
 }
 
 export interface MostPlayedStatistics {
@@ -293,4 +300,26 @@ export interface MostPlayedStatistics {
   won: number,
   gain: number,
   data: Array<MatchData>
+}
+
+export interface PointStatistics {
+  // Across all sets
+  set: PointSumStatistics,
+  // Across won sets
+  wonSet: PointSumStatistics,
+  // Across lost sets
+  lostSet: PointSumStatistics
+  // Across all matches
+  match: PointSumStatistics
+  // Across won matches
+  wonMatch: PointSumStatistics
+  // Across lost matches
+  lostMatch: PointSumStatistics
+}
+
+export interface PointSumStatistics {
+  total: number,
+  average: number,
+  averageWon: number,
+  winrate: number
 }

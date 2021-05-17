@@ -19,8 +19,8 @@ export function filterMatches(
   endDate: Date,
   dayCutoff: number
 ) {
-  const parsedStart = dayjs(startDate).startOf("day").add(dayCutoff, 'hours');
-  const parsedEnd = dayjs(endDate).endOf("day").add(dayCutoff, 'hours');
+  const parsedStart = dayjs(startDate).startOf("day").add(dayCutoff, "hours");
+  const parsedEnd = dayjs(endDate).endOf("day").add(dayCutoff, "hours");
   return matches.filter((match) => {
     // Bugged matches
     // if (match.rounds.length < 2) {
@@ -29,7 +29,7 @@ export function filterMatches(
     if (!match.complete) {
       return false;
     }
-    if (!match.ranked && match["elo-change"] > 0) {
+    if (!match.ranked && match["elo-change-corrected"] != 0) {
       return false;
     }
     // Regular filtering
@@ -56,7 +56,10 @@ export function filterMatches(
         return false;
       }
     }
-    if (match.offsetDate.isBefore(parsedStart) || match.offsetDate.isAfter(parsedEnd)) {
+    if (
+      match.offsetDate.isBefore(parsedStart) ||
+      match.offsetDate.isAfter(parsedEnd)
+    ) {
       return false;
     }
     return true;
@@ -72,6 +75,7 @@ export function processData(
   // console.log(rounds);
   const processedMatches = new Array<MatchData>();
   const hashedRounds = Object.fromEntries(rounds.map((r) => [r["id"], r]));
+  matches.sort((m1, m2) => Number(m2.id) - Number(m1.id));
   for (const [index, match] of matches.entries()) {
     const home = match.attributes["home-team"][0]["id"] == parseInt(id);
     const newMatch: MatchData = {
@@ -87,6 +91,7 @@ export function processData(
       "elo-diff-now": 0,
       "elo-diff-now-formatted": "",
       "elo-change": match.attributes["elo-change"],
+      "elo-change-corrected": 0,
       date: dayjs(match.attributes["created-at"]),
       offsetDate: dayjs(match.attributes["created-at"]),
       rounds: [],
@@ -116,14 +121,22 @@ export function processData(
           roundData.attributes["home-score"] >= 11 ||
           roundData.attributes["away-score"] >= 11,
       };
-      newRoundData["score-formatted"] = `${newRoundData["self-score"]}-${newRoundData["opponent-score"]}`
+      newRoundData[
+        "score-formatted"
+      ] = `${newRoundData["self-score"]}-${newRoundData["opponent-score"]}`;
       newRoundData["won"] =
         newRoundData["self-score"] > newRoundData["opponent-score"];
       newMatch.rounds.push(newRoundData);
     }
-    newMatch.rounds.sort((r1, r2) => parseInt(r1.id) - parseInt(r2.id))
+    newMatch.rounds.sort((r1, r2) => parseInt(r1.id) - parseInt(r2.id));
     processedMatches.push(newMatch);
   }
+  processedMatches.forEach((m, index) => {
+    m["elo-change-corrected"] =
+      index > 0
+        ? processedMatches[index - 1].self["match-elo"] - m.self["match-elo"]
+        : m.self["current-elo"] - m.self["match-elo"];
+  });
   return processedMatches;
 }
 

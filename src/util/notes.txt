@@ -1,0 +1,11 @@
+New stuff:
+
+Information about sets played(total/won/lost/etc)
+
+Info about points played (total/won/lost etc)
+
+Set/Point data in wins/losses
+
+Win streak/loss streak,
+
+Stats against elo range (graph?)
