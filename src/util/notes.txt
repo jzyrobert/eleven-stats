@@ -1,10 +1,9 @@
-New stuff:
-
+Done:
 Information about sets played(total/won/lost/etc)
-
 Info about points played (total/won/lost etc)
-
 Set/Point data in wins/losses
+
+Todo:
 
 Win streak/loss streak,
 

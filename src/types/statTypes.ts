@@ -1,4 +1,4 @@
-import { Dayjs } from "dayjs"
+import dayjs, { Dayjs } from "dayjs"
 
 export const enum Ranked {
   All = "all",
@@ -196,11 +196,14 @@ export interface PlayerData {
 }
 
 export interface MatchStatistics {
+  played: number,
   won: number,
   winrate: number,
   average_elo: number,
   average_elo_diff: number,
   perDay: MatchDayStatistics,
+  winStreak: StreakStatistics,
+  lossStreak: StreakStatistics
 }
 
 export interface MatchupStatistics {
@@ -218,8 +221,17 @@ export interface MatchDayStatistics {
   maxEndElo: number
 }
 
+export interface StreakStatistics {
+  played: number,
+  startDate: Dayjs,
+  endDate: Dayjs,
+  netElo: number,
+  matches: Array<MatchData>
+}
+
 export interface PlayerStatistics {
-  unique_opponents: UniqueOpponentStatistics
+  unique_opponents: UniqueOpponentStatistics,
+  unique_opponents_elo: number,
   opponent_winrate: number,
   highestElo: MatchupStatistics,
   highestEloNow: MatchupStatistics,
@@ -229,7 +241,19 @@ export interface PlayerStatistics {
   leastImproved: MatchupStatistics,
   mostPlayed: MostPlayedStatistics,
   mostWon: MostPlayedStatistics,
-  mostLost: MostPlayedStatistics
+  mostLost: MostPlayedStatistics,
+}
+export interface MostPlayedStatistics {
+  mostPlayedList: Array<String>,
+  mostPlayedCount: Array<Number>,
+  mostPlayedWon: Array<Number>,
+  mostPlayedLost: Array<Number>,
+  username: string,
+  id: number,
+  matches: number,
+  won: number,
+  gain: number,
+  data: Array<MatchData>
 }
 
 export interface UniqueOpponentStatistics {
@@ -293,14 +317,6 @@ export interface RoundStatistics {
   incompleteRounds: number,
 }
 
-export interface MostPlayedStatistics {
-  username: string,
-  id: number,
-  matches: number,
-  won: number,
-  gain: number,
-  data: Array<MatchData>
-}
 
 export interface PointStatistics {
   // Across all sets

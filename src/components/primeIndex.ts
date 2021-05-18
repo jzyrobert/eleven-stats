@@ -1,0 +1,13 @@
+export { default as Calendar } from "primevue/calendar";
+export { default as InputText } from "primevue/inputtext";
+export { default as Button } from "primevue/button";
+export { default as Dropdown } from "primevue/dropdown";
+export { default as ProgressSpinner } from "primevue/progressspinner";
+export { default as Card } from "primevue/card";
+export { default as DataTable } from "primevue/datatable";
+export { default as Column } from "primevue/column";
+export { default as TabView } from "primevue/tabview";
+export { default as TabPanel } from "primevue/tabpanel";
+export { default as InputNumber } from "primevue/inputnumber";
+export { default as Avatar } from "primevue/avatar";
+export { default as ToggleButton } from "primevue/togglebutton";

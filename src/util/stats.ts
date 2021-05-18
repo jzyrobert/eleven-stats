@@ -11,27 +11,32 @@ import {
   PointSumStatistics,
   RankedStatistics,
   RoundStatistics,
+  StreakStatistics,
   UniqueOpponentStatistics,
 } from "../types/statTypes";
-import _, { at } from "lodash";
-import { SAMPLE_MATCHES_TEST } from "./predator";
+import _ from "lodash";
 
 // All statistics related to matches played
 export function ALL_MATCH_STATS(matches: Array<MatchData>): MatchStatistics {
   return {
+    played: matches.length,
     won: WINS(matches),
     winrate: WINRATE(matches),
     average_elo: AVERAGE_ELO_MATCH(matches),
     average_elo_diff: AVERAGE_ELO_DIFF_MATCH(matches),
     perDay: MATCHES_DAY_STATISTICS(matches),
+    winStreak: LONGEST_WINSTREAK(matches),
+    lossStreak: LONGEST_LOSSSTREAK(matches),
   };
 }
 
 // All statistics related to players, self and opponents
 export function ALL_PLAYER_STATS(matches: Array<MatchData>): PlayerStatistics {
-  const { most, won, lost } = MOST_PLAYED(matches);
+  const { most, won, lost } =
+    MOST_PLAYED(matches);
   return {
     unique_opponents: UNIQUE_OPPONENTS(matches),
+    unique_opponents_elo: AVERAGE_ELO_UNIQUE(matches),
     opponent_winrate: AVERAGE_OPPONENT_WINRATE(matches),
     highestElo: HIGHEST_MATCH(matches),
     highestEloNow: HIGHEST_NOW(matches),
@@ -105,11 +110,14 @@ export function MATCHES_DAY_STATISTICS(
   //   m.won ? m["elo-change"] : -1 * m["elo-change"]
   // );
   const maxWins = _.sumBy(maxDateMatches, "won");
-  const maxStartElo =
-    maxDateMatches[maxDateMatches.length - 1].self["match-elo"];
-  const maxEndElo =
-    maxDateMatches[0].self["match-elo"] +
-    maxDateMatches[0]["elo-change-corrected"];
+  let maxStartElo = 0;
+  let maxEndElo = 0;
+  if (matches.length > 0) {
+    maxStartElo = maxDateMatches[maxDateMatches.length - 1].self["match-elo"];
+    maxEndElo =
+      maxDateMatches[0].self["match-elo"] +
+      maxDateMatches[0]["elo-change-corrected"];
+  }
   // const maxEndElo =
   //   maxDateMatches[0].self["match-elo"] +
   //   (maxDateMatches[0].won
@@ -124,6 +132,54 @@ export function MATCHES_DAY_STATISTICS(
     maxWins,
     maxStartElo,
     maxEndElo,
+  };
+}
+
+export function LONGEST_WINSTREAK(matches: Array<MatchData>): StreakStatistics {
+  const sortedMatches = _.sortBy(matches, (m) => Number(m.id));
+  let longestStreak: Array<MatchData> = [];
+  let currentStreak: Array<MatchData> = [];
+  for (const match of sortedMatches) {
+    if (!match.won) {
+      if (currentStreak.length > longestStreak.length) {
+        longestStreak = currentStreak;
+      }
+      currentStreak = [];
+    } else {
+      currentStreak.push(match);
+    }
+  }
+  return {
+    played: longestStreak.length,
+    startDate: longestStreak[0].offsetDate.startOf("day"),
+    endDate: longestStreak[longestStreak.length - 1].offsetDate.startOf("day"),
+    netElo: _.sumBy(longestStreak, (m) => m["elo-change-corrected"]),
+    matches: longestStreak,
+  };
+}
+
+export function LONGEST_LOSSSTREAK(
+  matches: Array<MatchData>
+): StreakStatistics {
+  const sortedMatches = _.sortBy(matches, (m) => Number(m.id));
+  let longestStreak: Array<MatchData> = [];
+  let currentStreak: Array<MatchData> = [];
+  for (const match of sortedMatches) {
+    if (match.won) {
+      if (currentStreak.length > longestStreak.length) {
+        longestStreak = currentStreak;
+      }
+      currentStreak = [];
+    } else {
+      currentStreak.push(match);
+    }
+  }
+  return {
+    played: longestStreak.length,
+    startDate: longestStreak[0].offsetDate.startOf("day"),
+    endDate: longestStreak[longestStreak.length - 1].offsetDate.startOf("day"),
+    netElo: _.sumBy(longestStreak, (m) => m["elo-change-corrected"]),
+    matches: longestStreak,
   };
 }
 
@@ -282,16 +338,39 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
   lost: MostPlayedStatistics;
 } {
   const groupedMatches = _.groupBy(matches, (m) => m.opponent.userName);
+  const mostPlayedList = _.sortBy(
+    Object.keys(groupedMatches),
+    (n) => -1 * groupedMatches[n].length
+  );
+  const mostPlayedCount = mostPlayedList.map(n => groupedMatches[n].length)
+  const mostPlayedWon = mostPlayedList.map(n => groupedMatches[n].filter(m => m.won).length)
+  const mostPlayedLost = mostPlayedList.map(n => groupedMatches[n].filter(m => !m.won).length)
   const mostPlayed = _.maxBy(
     Object.keys(groupedMatches),
     (name) => groupedMatches[name].length
   )!;
   const mostPlayedData = groupedMatches[mostPlayed];
+
+  const mostWonList = _.sortBy(
+    Object.keys(groupedMatches),
+    (n) => -1 * groupedMatches[n].filter(m => m.won).length
+  );
+  const mostWonCount = mostWonList.map(n => groupedMatches[n].length)
+  const mostWonWon = mostWonList.map(n => groupedMatches[n].filter(m => m.won).length)
+  const mostWonLost = mostWonList.map(n => groupedMatches[n].filter(m => !m.won).length)
   const mostWon = _.maxBy(
     Object.keys(groupedMatches),
     (name) => groupedMatches[name].filter((m) => m.won).length
   )!;
   const mostWonData = groupedMatches[mostWon];
+
+  const mostLostList = _.sortBy(
+    Object.keys(groupedMatches),
+    (n) => -1 * groupedMatches[n].filter(m => !m.won).length
+  );
+  const mostLostCount = mostLostList.map(n => groupedMatches[n].length)
+  const mostLostWon = mostLostList.map(n => groupedMatches[n].filter(m => m.won).length)
+  const mostLostLost = mostLostList.map(n => groupedMatches[n].filter(m => !m.won).length)
   const mostLost = _.maxBy(
     Object.keys(groupedMatches),
     (name) => groupedMatches[name].filter((m) => !m.won).length
@@ -300,6 +379,10 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
 
   return {
     most: {
+      mostPlayedList,
+      mostPlayedCount,
+      mostPlayedWon,
+      mostPlayedLost,
       username: mostPlayed,
       id: mostPlayedData[0].opponent.id,
       matches: mostPlayedData.length,
@@ -309,6 +392,10 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
       data: mostPlayedData,
     },
     won: {
+      mostPlayedList: mostWonList,
+      mostPlayedCount: mostWonCount,
+      mostPlayedWon: mostWonWon,
+      mostPlayedLost: mostWonLost,
       username: mostWon,
       id: mostWonData[0].opponent.id,
       matches: mostWonData.length,
@@ -318,6 +405,10 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
       data: mostWonData,
     },
     lost: {
+      mostPlayedList: mostLostList,
+      mostPlayedCount: mostLostCount,
+      mostPlayedWon: mostLostWon,
+      mostPlayedLost: mostLostLost,
       username: mostLost,
       id: mostLostData[0].opponent.id,
       matches: mostLostData.length,

@@ -7,13 +7,14 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@j-t-mcc/vue3-chartjs": "^1.1.1",
     "chart.js": "^3.2.1",
+    "chartjs-chart-wordcloud": "^3.0.1",
     "dayjs": "^1.10.4",
     "lodash": "^4.17.21",
     "primeflex": "^2.0.0",
     "primevue": "^3.4.0",
-    "vue": "^3.0.5",
-    "vue3-chart-v2": "^0.8.2"
+    "vue": "^3.0.5"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.169",

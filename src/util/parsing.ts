@@ -10,6 +10,14 @@ import {
 } from "../types/statTypes";
 import dayjs from "dayjs";
 
+export function formatScore(match: MatchData): string {
+  let score = "";
+  for (const round of match.rounds) {
+    score += `${round["score-formatted"]} `;
+  }
+  return score;
+}
+
 export function filterMatches(
   matches: Array<MatchData>,
   ranked: Ranked,
