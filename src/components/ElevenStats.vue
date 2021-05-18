@@ -438,19 +438,19 @@ export default defineComponent({
     const oppStats = ref(true);
     const eloStats = ref(true);
 
-    onMounted(() => {
-      matches.value = processData(
-        // SAMPLE.SAMPLE_ID_BIG,
-        // SAMPLE.SAMPLE_MATCHES_BIG,
-        // SAMPLE.SAMPLE_ROUNDS_BIG
-        SAMPLE_HUGE.SAMPLE_ID_HUGE,
-        SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
-        SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
-        // SAMPLE_TEST.SAMPLE_ID_TEST,
-        //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
-        //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
-      );
-    });
+    // onMounted(() => {
+    //   matches.value = processData(
+    //     // SAMPLE.SAMPLE_ID_BIG,
+    //     // SAMPLE.SAMPLE_MATCHES_BIG,
+    //     // SAMPLE.SAMPLE_ROUNDS_BIG
+    //     SAMPLE_HUGE.SAMPLE_ID_HUGE,
+    //     SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
+    //     SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
+    //     // SAMPLE_TEST.SAMPLE_ID_TEST,
+    //     //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
+    //     //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
+    //   );
+    // });
 
     return {
       loaded,
