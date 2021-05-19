@@ -5,16 +5,16 @@
       <template #content>
         <p>
           The most ELO you <b>gained</b> is from
-          {{ all_ranked_stats.mostGained.username }} ({{
-            all_ranked_stats.mostGained.id
-          }}), taking a net <b>{{ all_ranked_stats.mostGained.gain }}</b> from
+          {{ mostNet.name }} ({{
+            mostNet.gains.id
+          }}), taking a net <b>{{ mostNet.gains.net }}</b> from
           them.
         </p>
         <p>
           The most ELO you <b>lost</b> is to
-          {{ all_ranked_stats.mostLost.username }} ({{
-            all_ranked_stats.mostLost.id
-          }}), losing a net <b>{{ all_ranked_stats.mostLost.gain }}</b> to them.
+          {{ leastNet.name }} ({{
+            leastNet.gains.id
+          }}), losing a net <b>{{ leastNet.gains.net }}</b> to them.
         </p>
       </template>
     </Card>
@@ -26,6 +26,7 @@ import { defineComponent, PropType } from "vue";
 import { Card } from "../components/primeIndex";
 import dayjs from "dayjs";
 import {
+  GainInfo,
   MatchStatistics,
   PlayerStatistics,
   PointStatistics,
@@ -38,6 +39,22 @@ export default defineComponent({
   name: "CardName",
   components: {
     Card,
+  },
+  computed: {
+    mostNet(): { name: string, gains: GainInfo } {
+      const name = this.all_ranked_stats.mostElo.mostNetList[0]
+      return {
+        name,
+        gains: this.all_ranked_stats.mostElo.gains[name]
+      }
+    },
+    leastNet(): { name: string, gains: GainInfo } {
+      const name = this.all_ranked_stats.mostElo.mostNetList[this.all_ranked_stats.mostElo.mostNetList.length - 1]
+      return {
+        name,
+        gains: this.all_ranked_stats.mostElo.gains[name]
+      }
+    }
   },
   props: {
     all_match_stats: {

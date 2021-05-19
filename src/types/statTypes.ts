@@ -225,6 +225,8 @@ export interface StreakStatistics {
   played: number,
   startDate: Dayjs,
   endDate: Dayjs,
+  startElo: number,
+  endElo: number,
   netElo: number,
   matches: Array<MatchData>
 }
@@ -273,8 +275,7 @@ export interface RankedStatistics {
   total_change: number,
   total_gain: number,
   total_loss: number,
-  mostGained: GainStatistics,
-  mostLost: GainStatistics,
+  mostElo: GainStatistics,
   bestDay: DayStatistics,
   worstDay: DayStatistics
 }
@@ -289,9 +290,19 @@ export interface DayStatistics {
 }
 
 export interface GainStatistics {
-  username: string,
+  mostTotalList: Array<string>
+  mostNetList: Array<string>
+  mostGainedList: Array<string>
+  mostLostList: Array<string>
+  gains: { [name: string] : GainInfo }
+}
+
+export interface GainInfo {
   id: number,
-  gain: number
+  total: number,
+  net: number,
+  gained: number,
+  lost: number
 }
 
 export interface RoundStatistics {

@@ -2,9 +2,9 @@
   <div class="cardbox p-col-12 p-md-6 p-lg-4">
     <Card class="p-p-2">
       <template #title
-        >Most
-        <Dropdown v-model="choice" :options="choiceOptions" />
-        opponents</template
+        >Opponents with <Dropdown v-model="direction" :options="directionOptions" />
+        <Dropdown v-model="choice" :options="choiceOptions" /> ELO
+        gain</template
       >
       <template #content>
         <vue3-chart-js ref="chartRef" v-bind="{ ...baseData }" />
@@ -29,7 +29,7 @@ import {
 import { formatScore } from "../util/parsing";
 
 export default defineComponent({
-  name: "MostPlayedChart",
+  name: "MostEloChart",
   components: {
     Vue3ChartJs,
     Card,
@@ -37,11 +37,16 @@ export default defineComponent({
   },
   setup() {
     const chartRef: Ref<Vue3Chart> = ref(null) as unknown as Ref<Vue3Chart>;
-    const choice = ref("played");
-    const choiceOptions = ["played", "won", "losses"];
+    const direction = ref("most");
+    const directionOptions = ["most", "least"];
+
+    const choice = ref("total");
+    const choiceOptions = ["total", "net", "positive", "negative"];
 
     return {
       chartRef,
+      direction,
+      directionOptions,
       choice,
       choiceOptions,
     };
@@ -61,22 +66,20 @@ export default defineComponent({
           },
         },
         data: {
-          labels: this.all_player_stats.mostPlayed.mostPlayedList.slice(0, 10),
+          labels: this.all_ranked_stats.mostElo.mostTotalList.slice(0, 10),
           datasets: [
             {
-              label: "Won",
-              data: this.all_player_stats.mostPlayed.mostPlayedWon.slice(
-                0,
-                10
-              ) as number[],
+              label: "Gained",
+              data: this.all_ranked_stats.mostElo.mostTotalList
+                .slice(0, 10)
+                .map((l) => this.all_ranked_stats.mostElo.gains[l].gained),
               backgroundColor: Array(10).fill("#1fcf39"),
             },
             {
               label: "Lost",
-              data: this.all_player_stats.mostPlayed.mostPlayedLost.slice(
-                0,
-                10
-              ) as number[],
+              data: this.all_ranked_stats.mostElo.mostTotalList
+                .slice(0, 10)
+                .map((l) => -1 * this.all_ranked_stats.mostElo.gains[l].lost),
               backgroundColor: Array(10).fill("#c91f1c"),
             },
           ],
@@ -86,23 +89,33 @@ export default defineComponent({
   },
   computed: {
     chartData(): ChartData {
-      const data =
-        this.choice == "played"
-          ? this.all_player_stats.mostPlayed
-          : this.choice == "won"
-          ? this.all_player_stats.mostWon
-          : this.all_player_stats.mostLost;
+      let data = this.all_ranked_stats.mostElo.mostTotalList;
+      if (this.choice == "net") {
+        data = this.all_ranked_stats.mostElo.mostNetList;
+      } else if (this.choice == "positive") {
+        data = this.all_ranked_stats.mostElo.mostGainedList;
+      } else if (this.choice == "negative") {
+        data = this.all_ranked_stats.mostElo.mostLostList;
+      }
+      let labels = data.slice(0, 10);
+      if (this.direction == "least") {
+        labels = data.slice(-10).reverse()
+      }
       return {
-        labels: data.mostPlayedList.slice(0, 10),
+        labels,
         datasets: [
           {
-            label: "Won",
-            data: data.mostPlayedWon.slice(0, 10) as number[],
+            label: "Gained",
+            data: labels.map(
+              (l) => this.all_ranked_stats.mostElo.gains[l].gained
+            ),
             backgroundColor: Array(10).fill("#1fcf39"),
           },
           {
             label: "Lost",
-            data: data.mostPlayedLost.slice(0, 10) as number[],
+            data: labels.map(
+              (l) => -1 * this.all_ranked_stats.mostElo.gains[l].lost
+            ),
             backgroundColor: Array(10).fill("#c91f1c"),
           },
         ],
@@ -111,9 +124,6 @@ export default defineComponent({
   },
   watch: {
     chartData() {
-      this.updateChart();
-    },
-    choice() {
       this.updateChart();
     },
   },
@@ -125,13 +135,13 @@ export default defineComponent({
     },
     all_ranked_stats: {
       type: Object as PropType<RankedStatistics>,
-      required: false,
-      // required: true
+      // required: false,
+      required: true,
     },
     all_player_stats: {
       type: Object as PropType<PlayerStatistics>,
-      //   required: false,
-      required: true,
+      required: false,
+      // required: true,
     },
     all_round_stats: {
       type: Object as PropType<RoundStatistics>,

@@ -226,13 +226,9 @@
               v-if="oppStats"
               v-bind:all_player_stats="all_player_stats"
             />
-            <MostWonChart
-              v-if="oppStats"
-              v-bind:all_player_stats="all_player_stats"
-            />
-            <MostLostChart
-              v-if="oppStats"
-              v-bind:all_player_stats="all_player_stats"
+            <MostEloChart
+              v-if="eloStats"
+              v-bind:all_ranked_stats="all_ranked_stats"
             />
           </div>
         </TabPanel>
@@ -306,8 +302,7 @@ export default defineComponent({
     // Custom charts
     LossChart: CHARTS.LossChart,
     MostPlayedChart: CHARTS.MostPlayedChart,
-    MostWonChart: CHARTS.MostWonChart,
-    MostLostChart: CHARTS.MostLostChart,
+    MostEloChart: CHARTS.MostEloChart,
 
     // Custom cards
     MatchCard: CARDS.MatchCard,
@@ -438,19 +433,19 @@ export default defineComponent({
     const oppStats = ref(true);
     const eloStats = ref(true);
 
-    // onMounted(() => {
-    //   matches.value = processData(
-    //     // SAMPLE.SAMPLE_ID_BIG,
-    //     // SAMPLE.SAMPLE_MATCHES_BIG,
-    //     // SAMPLE.SAMPLE_ROUNDS_BIG
-    //     SAMPLE_HUGE.SAMPLE_ID_HUGE,
-    //     SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
-    //     SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
-    //     // SAMPLE_TEST.SAMPLE_ID_TEST,
-    //     //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
-    //     //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
-    //   );
-    // });
+    onMounted(() => {
+      matches.value = processData(
+        // SAMPLE.SAMPLE_ID_BIG,
+        // SAMPLE.SAMPLE_MATCHES_BIG,
+        // SAMPLE.SAMPLE_ROUNDS_BIG
+        SAMPLE_HUGE.SAMPLE_ID_HUGE,
+        SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
+        SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
+        // SAMPLE_TEST.SAMPLE_ID_TEST,
+        //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
+        //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
+      );
+    });
 
     return {
       loaded,

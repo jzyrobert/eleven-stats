@@ -1,5 +1,6 @@
 import {
   DayStatistics,
+  GainInfo,
   GainStatistics,
   MatchData,
   MatchDayStatistics,
@@ -32,8 +33,7 @@ export function ALL_MATCH_STATS(matches: Array<MatchData>): MatchStatistics {
 
 // All statistics related to players, self and opponents
 export function ALL_PLAYER_STATS(matches: Array<MatchData>): PlayerStatistics {
-  const { most, won, lost } =
-    MOST_PLAYED(matches);
+  const { most, won, lost } = MOST_PLAYED(matches);
   return {
     unique_opponents: UNIQUE_OPPONENTS(matches),
     unique_opponents_elo: AVERAGE_ELO_UNIQUE(matches),
@@ -52,7 +52,6 @@ export function ALL_PLAYER_STATS(matches: Array<MatchData>): PlayerStatistics {
 
 // All statistics relating to ELO
 export function ALL_RANKED_STATS(matches: Array<MatchData>): RankedStatistics {
-  const { most, least } = MOST_ELO_GAINED_LOST(matches);
   const { best, worst } = BEST_WORST_DAY(matches);
   return {
     average_change: AVERAGE_CHANGE(matches),
@@ -61,8 +60,7 @@ export function ALL_RANKED_STATS(matches: Array<MatchData>): RankedStatistics {
     total_change: TOTAL_CHANGE(matches),
     total_gain: TOTAL_GAIN(matches),
     total_loss: TOTAL_LOSS(matches),
-    mostGained: most,
-    mostLost: least,
+    mostElo: MOST_ELO_GAINED_LOST(matches),
     bestDay: best,
     worstDay: worst,
   };
@@ -153,6 +151,10 @@ export function LONGEST_WINSTREAK(matches: Array<MatchData>): StreakStatistics {
     played: longestStreak.length,
     startDate: longestStreak[0].offsetDate.startOf("day"),
     endDate: longestStreak[longestStreak.length - 1].offsetDate.startOf("day"),
+    startElo: longestStreak[0].self["match-elo"],
+    endElo:
+      longestStreak[longestStreak.length - 1].self["match-elo"] +
+      longestStreak[longestStreak.length - 1]["elo-change-corrected"],
     netElo: _.sumBy(longestStreak, (m) => m["elo-change-corrected"]),
     matches: longestStreak,
   };
@@ -178,6 +180,10 @@ export function LONGEST_LOSSSTREAK(
     played: longestStreak.length,
     startDate: longestStreak[0].offsetDate.startOf("day"),
     endDate: longestStreak[longestStreak.length - 1].offsetDate.startOf("day"),
+    startElo: longestStreak[0].self["match-elo"],
+    endElo:
+      longestStreak[longestStreak.length - 1].self["match-elo"] +
+      longestStreak[longestStreak.length - 1]["elo-change-corrected"],
     netElo: _.sumBy(longestStreak, (m) => m["elo-change-corrected"]),
     matches: longestStreak,
   };
@@ -342,9 +348,13 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
     Object.keys(groupedMatches),
     (n) => -1 * groupedMatches[n].length
   );
-  const mostPlayedCount = mostPlayedList.map(n => groupedMatches[n].length)
-  const mostPlayedWon = mostPlayedList.map(n => groupedMatches[n].filter(m => m.won).length)
-  const mostPlayedLost = mostPlayedList.map(n => groupedMatches[n].filter(m => !m.won).length)
+  const mostPlayedCount = mostPlayedList.map((n) => groupedMatches[n].length);
+  const mostPlayedWon = mostPlayedList.map(
+    (n) => groupedMatches[n].filter((m) => m.won).length
+  );
+  const mostPlayedLost = mostPlayedList.map(
+    (n) => groupedMatches[n].filter((m) => !m.won).length
+  );
   const mostPlayed = _.maxBy(
     Object.keys(groupedMatches),
     (name) => groupedMatches[name].length
@@ -353,11 +363,15 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
 
   const mostWonList = _.sortBy(
     Object.keys(groupedMatches),
-    (n) => -1 * groupedMatches[n].filter(m => m.won).length
+    (n) => -1 * groupedMatches[n].filter((m) => m.won).length
   );
-  const mostWonCount = mostWonList.map(n => groupedMatches[n].length)
-  const mostWonWon = mostWonList.map(n => groupedMatches[n].filter(m => m.won).length)
-  const mostWonLost = mostWonList.map(n => groupedMatches[n].filter(m => !m.won).length)
+  const mostWonCount = mostWonList.map((n) => groupedMatches[n].length);
+  const mostWonWon = mostWonList.map(
+    (n) => groupedMatches[n].filter((m) => m.won).length
+  );
+  const mostWonLost = mostWonList.map(
+    (n) => groupedMatches[n].filter((m) => !m.won).length
+  );
   const mostWon = _.maxBy(
     Object.keys(groupedMatches),
     (name) => groupedMatches[name].filter((m) => m.won).length
@@ -366,11 +380,15 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
 
   const mostLostList = _.sortBy(
     Object.keys(groupedMatches),
-    (n) => -1 * groupedMatches[n].filter(m => !m.won).length
+    (n) => -1 * groupedMatches[n].filter((m) => !m.won).length
   );
-  const mostLostCount = mostLostList.map(n => groupedMatches[n].length)
-  const mostLostWon = mostLostList.map(n => groupedMatches[n].filter(m => m.won).length)
-  const mostLostLost = mostLostList.map(n => groupedMatches[n].filter(m => !m.won).length)
+  const mostLostCount = mostLostList.map((n) => groupedMatches[n].length);
+  const mostLostWon = mostLostList.map(
+    (n) => groupedMatches[n].filter((m) => m.won).length
+  );
+  const mostLostLost = mostLostList.map(
+    (n) => groupedMatches[n].filter((m) => !m.won).length
+  );
   const mostLost = _.maxBy(
     Object.keys(groupedMatches),
     (name) => groupedMatches[name].filter((m) => !m.won).length
@@ -481,45 +499,49 @@ export function TOTAL_LOSS(matches: Array<MatchData>) {
   // return _.sum(matches.filter((m) => m.ranked && !m.won).map((m) => -1 * m["elo-change"]));
 }
 
-export function MOST_ELO_GAINED_LOST(matches: Array<MatchData>): {
-  most: GainStatistics;
-  least: GainStatistics;
-} {
-  const gainCounts = _.reduce(
+export function MOST_ELO_GAINED_LOST(
+  matches: Array<MatchData>
+): GainStatistics {
+  let gainCounts = _.reduce(
     matches,
     (dict, match) => {
-      if (!(match.opponent.userName in dict)) {
-        dict[match.opponent.userName] = 0;
+      if (match["elo-change-corrected"] == 0) {
+        return dict;
       }
-      dict[match.opponent.userName] += match["elo-change-corrected"];
-      // dict[match.opponent.userName] += match.won
-      //   ? match["elo-change"]
-      //   : -1 * match["elo-change"];
+      if (!(match.opponent.userName in dict)) {
+        dict[match.opponent.userName] = {
+          id: match.opponent.id,
+          total: 0,
+          net: 0,
+          gained: 0,
+          lost: 0,
+        };
+      }
+      dict[match.opponent.userName].total += Math.abs(
+        match["elo-change-corrected"]
+      );
+      dict[match.opponent.userName].net += match["elo-change-corrected"];
+      if (match["elo-change-corrected"] > 0) {
+        dict[match.opponent.userName].gained += match["elo-change-corrected"];
+      } else {
+        dict[match.opponent.userName].lost +=
+          -1 * match["elo-change-corrected"];
+      }
       return dict;
     },
-    {} as { [name: string]: number }
+    {} as { [name: string]: GainInfo }
   );
-  const maxName = _.maxBy(Object.keys(gainCounts), (id) => gainCounts[id])!;
-  const maxGain = gainCounts[maxName];
-  const maxId = _.find(matches, (m) => m.opponent.userName == maxName)!.opponent
-    .id;
 
-  const minName = _.minBy(Object.keys(gainCounts), (id) => gainCounts[id])!;
-  const minGain = gainCounts[minName];
-  const minId = _.find(matches, (m) => m.opponent.userName == minName)!.opponent
-    .id;
-
+    const mostTotalList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].total).reverse()
+    const mostNetList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].net).reverse()
+    const mostGainedList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].gained).reverse()
+    const mostLostList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].lost).reverse()
   return {
-    most: {
-      username: maxName,
-      id: maxId,
-      gain: maxGain,
-    },
-    least: {
-      username: minName,
-      id: minId,
-      gain: minGain,
-    },
+    mostTotalList,
+    mostNetList,
+    mostGainedList,
+    mostLostList,
+    gains: gainCounts,
   };
 }
 
