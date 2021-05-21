@@ -68,7 +68,7 @@ export default defineComponent({
             },
             x: {
               title: {
-                display: true,
+                // display: true,
                 text: "Match number",
               },
             },
