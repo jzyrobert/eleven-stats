@@ -25,20 +25,25 @@ export function filterMatches(
   higher: Higher,
   startDate: Date,
   endDate: Date,
-  dayCutoff: number
+  dayCutoff: number,
+  complete: boolean,
+  selfRange: Array<number>,
+  opponentRange: Array<number>
 ) {
   const parsedStart = dayjs(startDate).startOf("day").add(dayCutoff, "hours");
   const parsedEnd = dayjs(endDate).endOf("day").add(dayCutoff, "hours");
   return matches.filter((match) => {
     // Bugged matches
-    // if (match.rounds.length < 2) {
-    //   return false;
-    // }
-    if (!match.complete) {
-      return false;
-    }
-    if (!match.ranked && match["elo-change-corrected"] != 0) {
-      return false;
+    if (complete) {
+      if (match.rounds.length < 2) {
+        return false;
+      }
+      if (!match.complete) {
+        return false;
+      }
+      if (!match.ranked && match["elo-change-corrected"] != 0) {
+        return false;
+      }
     }
     // Regular filtering
     if (ranked !== Ranked.All) {
@@ -67,6 +72,18 @@ export function filterMatches(
     if (
       match.offsetDate.isBefore(parsedStart) ||
       match.offsetDate.isAfter(parsedEnd)
+    ) {
+      return false;
+    }
+    if (
+      match.self["match-elo"] < selfRange[0] ||
+      match.self["match-elo"] > selfRange[1]
+    ) {
+      return false;
+    }
+    if (
+      match.opponent["match-elo"] < opponentRange[0] ||
+      match.opponent["match-elo"] > opponentRange[1]
     ) {
       return false;
     }
@@ -125,6 +142,9 @@ export function processData(
           : roundData.attributes["home-score"],
         "score-formatted": "",
         won: false,
+        isDeuce:
+          roundData.attributes["home-score"] >= 12 ||
+          roundData.attributes["away-score"] >= 12,
         complete:
           roundData.attributes["home-score"] >= 11 ||
           roundData.attributes["away-score"] >= 11,

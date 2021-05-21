@@ -72,7 +72,7 @@ export default defineComponent({
         )}</b>.`;
       }
       if (this.all_match_stats.lossStreak.netElo != 0) {
-        message += ` In these games, you <b>${this.all_match_stats.winStreak.startElo}</b> to <b>${this.all_match_stats.winStreak.endElo}</b>, losing a total of <b>${this.all_match_stats.lossStreak.netElo}</b> ELO`;
+        message += ` In these games, you went from <b>${this.all_match_stats.winStreak.startElo}</b> to <b>${this.all_match_stats.winStreak.endElo}</b>, losing a total of <b>${this.all_match_stats.lossStreak.netElo}</b> ELO`;
       }
       return message;
     },

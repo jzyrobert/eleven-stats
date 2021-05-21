@@ -10,22 +10,30 @@ import {
   PlayerStatistics,
   PointStatistics,
   PointSumStatistics,
+  RangeStatistics,
   RankedStatistics,
+  RoundData,
+  RoundDiff,
+  RoundDiffStatistics,
   RoundStatistics,
   StreakStatistics,
   UniqueOpponentStatistics,
 } from "../types/statTypes";
-import _ from "lodash";
+import _, { range } from "lodash";
+import dayjs from "dayjs";
 
 // All statistics related to matches played
-export function ALL_MATCH_STATS(matches: Array<MatchData>): MatchStatistics {
+export function ALL_MATCH_STATS(
+  matches: Array<MatchData>,
+  dayCutoff: number
+): MatchStatistics {
   return {
     played: matches.length,
     won: WINS(matches),
     winrate: WINRATE(matches),
     average_elo: AVERAGE_ELO_MATCH(matches),
     average_elo_diff: AVERAGE_ELO_DIFF_MATCH(matches),
-    perDay: MATCHES_DAY_STATISTICS(matches),
+    perDay: MATCHES_DAY_STATISTICS(matches, dayCutoff),
     winStreak: LONGEST_WINSTREAK(matches),
     lossStreak: LONGEST_LOSSSTREAK(matches),
   };
@@ -47,12 +55,16 @@ export function ALL_PLAYER_STATS(matches: Array<MatchData>): PlayerStatistics {
     mostPlayed: most,
     mostWon: won,
     mostLost: lost,
+    opponentRanges: ALL_RANGE_STATS(matches),
   };
 }
 
 // All statistics relating to ELO
-export function ALL_RANKED_STATS(matches: Array<MatchData>): RankedStatistics {
-  const { best, worst } = BEST_WORST_DAY(matches);
+export function ALL_RANKED_STATS(
+  matches: Array<MatchData>,
+  dayCutoff: number
+): RankedStatistics {
+  const { best, worst } = BEST_WORST_DAY(matches, dayCutoff);
   return {
     average_change: AVERAGE_CHANGE(matches),
     average_gain: AVERAGE_GAIN(matches),
@@ -85,12 +97,15 @@ export function AVERAGE_ELO_DIFF_MATCH(matches: Array<MatchData>) {
 }
 
 export function MATCHES_DAY_STATISTICS(
-  matches: Array<MatchData>
+  matches: Array<MatchData>,
+  dayCutoff: number
 ): MatchDayStatistics {
   const dayCounts = _.reduce(
     matches,
     (dict, match) => {
-      const date = match.offsetDate.format("YYYY-MM-DD");
+      const date = match.offsetDate
+        .subtract(dayCutoff, "hours")
+        .format("YYYY-MM-DD");
       if (!(date in dict)) {
         dict[date] = 0;
       }
@@ -99,14 +114,16 @@ export function MATCHES_DAY_STATISTICS(
     },
     {} as { [date: string]: number }
   );
+  const startDate = dayjs(
+    _.minBy(Object.keys(dayCounts), (d) => dayjs(d).unix())
+  );
+  const daysPlayed = Object.keys(dayCounts).length;
   const maxDate = _.maxBy(Object.keys(dayCounts), (d) => dayCounts[d]);
   const maxDateMatches = matches.filter(
-    (m) => m.offsetDate.format("YYYY-MM-DD") == maxDate
+    (m) =>
+      m.offsetDate.subtract(dayCutoff, "hours").format("YYYY-MM-DD") == maxDate
   );
   const maxNetElo = _.sumBy(maxDateMatches, (m) => m["elo-change-corrected"]);
-  // const maxNetElo = _.sumBy(maxDateMatches, (m) =>
-  //   m.won ? m["elo-change"] : -1 * m["elo-change"]
-  // );
   const maxWins = _.sumBy(maxDateMatches, "won");
   let maxStartElo = 0;
   let maxEndElo = 0;
@@ -116,15 +133,13 @@ export function MATCHES_DAY_STATISTICS(
       maxDateMatches[0].self["match-elo"] +
       maxDateMatches[0]["elo-change-corrected"];
   }
-  // const maxEndElo =
-  //   maxDateMatches[0].self["match-elo"] +
-  //   (maxDateMatches[0].won
-  //     ? maxDateMatches[0]["elo-change"]
-  //     : -1 * maxDateMatches[0]["elo-change"]);
   const average = round(_.mean(Object.values(dayCounts)), false);
   return {
     average,
-    maxDate: new Date(maxDate!),
+    startDate,
+    daysSinceStart: dayjs().diff(startDate, "days"),
+    daysPlayed,
+    maxDate: dayjs(maxDate!),
     maxPlayed: dayCounts[maxDate!],
     maxNetElo,
     maxWins,
@@ -438,6 +453,44 @@ export function MOST_PLAYED(matches: Array<MatchData>): {
   };
 }
 
+export function ALL_RANGE_STATS(
+  matches: Array<MatchData>
+): Array<RangeStatistics> {
+  const rangeStats: Array<RangeStatistics> = [];
+  const groupedMatches = _.reduce(
+    matches,
+    (dict, match) => {
+      const matchRange = Math.floor(match.opponent["match-elo"] / 100) * 100;
+      if (!(matchRange in dict)) {
+        dict[matchRange] = [];
+      }
+      dict[matchRange].push(match);
+      return dict;
+    },
+    {} as { [range: number]: Array<MatchData> }
+  );
+  for (const [range, group] of Object.entries(groupedMatches)) {
+    const stats: RangeStatistics = {
+      rangeStart: Number(range),
+      rangeEnd: Number(range) + 99,
+      rangeFormatted: `${range}-${Number(range) + 99}`,
+      played: group.length,
+      uniquePlayed: _.uniqBy(group, "opponent.id").length,
+      won: group.filter((m) => m.won).length,
+      lost: group.filter((m) => !m.won).length,
+      winrate: 0,
+      eloNet: _.sumBy(group, (m) => m["elo-change-corrected"]),
+      eloGained: _.sumBy(group, (m) => (m.won ? m["elo-change-corrected"] : 0)),
+      eloLost: _.sumBy(group, (m) =>
+        !m.won ? -1 * m["elo-change-corrected"] : 0
+      ),
+    };
+    stats.winrate = round(stats.won / stats.played, true);
+    rangeStats.push(stats);
+  }
+  return rangeStats;
+}
+
 // Ranked section
 
 export function AVERAGE_CHANGE(matches: Array<MatchData>) {
@@ -532,10 +585,22 @@ export function MOST_ELO_GAINED_LOST(
     {} as { [name: string]: GainInfo }
   );
 
-    const mostTotalList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].total).reverse()
-    const mostNetList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].net).reverse()
-    const mostGainedList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].gained).reverse()
-    const mostLostList = _.sortBy(Object.keys(gainCounts), n => gainCounts[n].lost).reverse()
+  const mostTotalList = _.sortBy(
+    Object.keys(gainCounts),
+    (n) => gainCounts[n].total
+  ).reverse();
+  const mostNetList = _.sortBy(
+    Object.keys(gainCounts),
+    (n) => gainCounts[n].net
+  ).reverse();
+  const mostGainedList = _.sortBy(
+    Object.keys(gainCounts),
+    (n) => gainCounts[n].gained
+  ).reverse();
+  const mostLostList = _.sortBy(
+    Object.keys(gainCounts),
+    (n) => gainCounts[n].lost
+  ).reverse();
   return {
     mostTotalList,
     mostNetList,
@@ -545,13 +610,20 @@ export function MOST_ELO_GAINED_LOST(
   };
 }
 
-export function BEST_WORST_DAY(matches: Array<MatchData>): {
+export function BEST_WORST_DAY(
+  matches: Array<MatchData>,
+  dayCutoff: number
+): {
   best: DayStatistics;
   worst: DayStatistics;
 } {
   let groupedMatches = _.groupBy(
     matches.filter((m) => m.ranked),
-    (m) => m.offsetDate.startOf("day").format("YYYY-MM-DD")
+    (m) =>
+      m.offsetDate
+        .subtract(dayCutoff, "hours")
+        .startOf("day")
+        .format("YYYY-MM-DD")
   );
   groupedMatches = _.mapValues(groupedMatches, (matches) =>
     _.sortBy(matches, "id")
@@ -577,7 +649,9 @@ export function BEST_WORST_DAY(matches: Array<MatchData>): {
   // (worstDayLastMatch.won ? 1 : -1) * worstDayLastMatch["elo-change"];
   return {
     best: {
-      date: groupedMatches[bestDay][0].offsetDate.startOf("day"),
+      date: groupedMatches[bestDay][0].offsetDate
+        .subtract(dayCutoff, "hours")
+        .startOf("day"),
       played: groupedMatches[bestDay].length,
       won: groupedMatches[bestDay].filter((m) => m.won).length,
       gain: dayGains[bestDay],
@@ -585,7 +659,9 @@ export function BEST_WORST_DAY(matches: Array<MatchData>): {
       endElo: bestEndElo,
     },
     worst: {
-      date: groupedMatches[worstDay][0].offsetDate.startOf("day"),
+      date: groupedMatches[worstDay][0].offsetDate
+        .subtract(dayCutoff, "hours")
+        .startOf("day"),
       played: groupedMatches[worstDay].length,
       won: groupedMatches[worstDay].filter((m) => m.won).length,
       gain: dayGains[worstDay],
@@ -681,6 +757,152 @@ export function ALL_ROUND_STATS(matches: Array<MatchData>): RoundStatistics {
       true
     ),
     incompleteRounds: rounds.filter((r) => !r.complete).length,
+    differenceStats: ALL_DIFF_STATS(matches),
+  };
+}
+
+export function ALL_DIFF_STATS(matches: Array<MatchData>): RoundDiffStatistics {
+  const deuceMatches = matches.filter(
+    (m) => m.rounds.filter((r, index) => r.isDeuce && index <= 1).length > 0
+  );
+  const wonDeuceMatches = deuceMatches.filter((m) => m.won);
+  const lostDeuceMatches = deuceMatches.filter((m) => !m.won);
+  const deuceRounds = deuceMatches.flatMap((m) =>
+    m.rounds.filter((r, index) => index > 0 && m.rounds[index - 1].isDeuce)
+  );
+  const wonMatchDeuceRounds = wonDeuceMatches.flatMap((m) =>
+    m.rounds.filter((r, index) => index > 0 && m.rounds[index - 1].isDeuce)
+  );
+  const lostMatchDeuceRounds = lostDeuceMatches.flatMap((m) =>
+    m.rounds.filter((r, index) => index > 0 && m.rounds[index - 1].isDeuce)
+  );
+
+  const groupedPrevPointDiffWins = _.reduce(
+    matches,
+    (dict, m) => {
+      for (const [i, round] of m.rounds.entries()) {
+        if (i > 0 && m.rounds[i - 1].won && round.won) {
+          const diff =
+            m.rounds[i - 1]["self-score"] - m.rounds[i - 1]["opponent-score"];
+          if (!(diff in dict)) {
+            dict[diff] = [];
+          }
+          dict[diff].push(round);
+        }
+      }
+      return dict;
+    },
+    {} as { [diff: number]: Array<RoundData> }
+  );
+  const groupedPrevPointDiffLoss = _.reduce(
+    matches,
+    (dict, m) => {
+      for (const [i, round] of m.rounds.entries()) {
+        if (i > 0 && m.rounds[i - 1].won && !round.won) {
+          const diff =
+            m.rounds[i - 1]["self-score"] - m.rounds[i - 1]["opponent-score"];
+          if (!(diff in dict)) {
+            dict[diff] = [];
+          }
+          dict[diff].push(round);
+        }
+      }
+      return dict;
+    },
+    {} as { [diff: number]: Array<RoundData> }
+  );
+  const prevPointDiffWins: Array<RoundDiff> = Object.keys(
+    groupedPrevPointDiffWins
+  ).map((p) => {
+    return {
+      diff: Number(p),
+      stat: groupedPrevPointDiffWins[Number(p)].length,
+    };
+  });
+  const prevPointDiffLoss: Array<RoundDiff> = Object.keys(
+    groupedPrevPointDiffLoss
+  ).map((p) => {
+    return {
+      diff: Number(p),
+      stat: groupedPrevPointDiffLoss[Number(p)].length,
+    };
+  });
+
+  const rounds = matches.flatMap((m) => m.rounds);
+  const groupedPointDiffWins = _.groupBy(
+    rounds.filter((r) => r.won),
+    (r) => r["self-score"] - r["opponent-score"]
+  );
+  const groupedPointDiffLoss = _.groupBy(
+    rounds.filter((r) => !r.won),
+    (r) => r["opponent-score"] - r["self-score"]
+  );
+  const pointDiffWins: Array<RoundDiff> = Object.keys(groupedPointDiffWins).map(
+    (p) => {
+      return {
+        diff: Number(p),
+        stat: groupedPointDiffWins[p].length,
+      };
+    }
+  );
+
+  const pointDiffLoss: Array<RoundDiff> = Object.keys(groupedPointDiffLoss).map(
+    (p) => {
+      return {
+        diff: Number(p),
+        stat: groupedPointDiffLoss[p].length,
+      };
+    }
+  );
+  return {
+    deuceNextWinrate: round(
+      deuceRounds.filter((r) => r.won).length / deuceRounds.length,
+      true
+    ),
+    wonMatchDeuceNextWinrate: round(
+      wonMatchDeuceRounds.filter((r) => r.won).length /
+        wonMatchDeuceRounds.length,
+      true
+    ),
+    lostMatchDeuceNextWinrate: round(
+      lostMatchDeuceRounds.filter((r) => r.won).length /
+        lostMatchDeuceRounds.length,
+      true
+    ),
+    pointDiffWins,
+    pointDiffLoss,
+    pointDiffWinrate: pointDiffWins.map((p) => {
+      if (!(p.diff in groupedPointDiffLoss)) {
+        return {
+          diff: p.diff,
+          stat: 100,
+        };
+      }
+      return {
+        diff: p.diff,
+        stat: round(
+          p.stat / (p.stat + groupedPointDiffLoss[p.diff].length),
+          true
+        ),
+      };
+    }),
+    prevPointDiffWins,
+    prevPointDiffLoss,
+    prevPointDiffWinrate: prevPointDiffWins.map((p) => {
+      if (!(p.diff in groupedPrevPointDiffLoss)) {
+        return {
+          diff: p.diff,
+          stat: 100,
+        };
+      }
+      return {
+        diff: p.diff,
+        stat: round(
+          p.stat / (p.stat + groupedPointDiffLoss[p.diff].length),
+          true
+        ),
+      };
+    }),
   };
 }
 
@@ -717,6 +939,7 @@ export function ALL_POINT_STATS(matches: Array<MatchData>): PointStatistics {
   const pointsWon = _.sumBy(rounds, (r) => r["self-score"]);
   const set: PointSumStatistics = {
     total: pointsPlayed,
+    totalWon: pointsWon,
     average: round(pointsPlayed / rounds.length, false),
     averageWon: round(pointsWon / rounds.length, false),
     winrate: 0,
@@ -724,6 +947,7 @@ export function ALL_POINT_STATS(matches: Array<MatchData>): PointStatistics {
   set.winrate = round(set.averageWon / set.average, true);
   const wonSet: PointSumStatistics = {
     total: _.sumBy(wonRounds, (r) => r["self-score"] + r["opponent-score"]),
+    totalWon: _.sumBy(wonRounds, (r) => r["self-score"]),
     average: round(
       _.meanBy(wonRounds, (r) => r["self-score"] + r["opponent-score"]),
       false
@@ -737,6 +961,7 @@ export function ALL_POINT_STATS(matches: Array<MatchData>): PointStatistics {
   wonSet.winrate = round(wonSet.averageWon / wonSet.average, true);
   const lostSet: PointSumStatistics = {
     total: _.sumBy(lostRounds, (r) => r["self-score"] + r["opponent-score"]),
+    totalWon: _.sumBy(lostRounds, (r) => r["self-score"]),
     average: round(
       _.meanBy(lostRounds, (r) => r["self-score"] + r["opponent-score"]),
       false
@@ -750,6 +975,7 @@ export function ALL_POINT_STATS(matches: Array<MatchData>): PointStatistics {
   lostSet.winrate = round(lostSet.averageWon / lostSet.average, true);
   const match: PointSumStatistics = {
     total: pointsPlayed,
+    totalWon: pointsWon,
     average: round(pointsPlayed / matches.length, false),
     averageWon: round(pointsWon / matches.length, false),
     winrate: 0,
@@ -760,6 +986,7 @@ export function ALL_POINT_STATS(matches: Array<MatchData>): PointStatistics {
       wonMatchRounds,
       (r) => r["self-score"] + r["opponent-score"]
     ),
+    totalWon: _.sumBy(wonMatchRounds, (r) => r["self-score"]),
     average: round(
       _.sumBy(wonMatchRounds, (r) => r["self-score"] + r["opponent-score"]) /
         wonMatches.length,
@@ -777,6 +1004,7 @@ export function ALL_POINT_STATS(matches: Array<MatchData>): PointStatistics {
       lostMatchRounds,
       (r) => r["self-score"] + r["opponent-score"]
     ),
+    totalWon: _.sumBy(lostMatchRounds, (r) => r["self-score"]),
     average: round(
       _.sumBy(lostMatchRounds, (r) => r["self-score"] + r["opponent-score"]) /
         lostMatches.length,

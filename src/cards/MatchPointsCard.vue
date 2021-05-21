@@ -1,5 +1,5 @@
 <template>
-  <div class="cardbox p-col-12 p-md-6 p-lg-3">
+  <div class="cardbox p-col-12 p-md-12 p-lg-6">
     <Card class="p-p-2">
       <template #title>and more Points</template>
       <template #content>
@@ -12,7 +12,8 @@
               {{ data.matchAverageWinrate }}%
             </template>
           </Column>
-          <Column field="matchTotal" header="Total points" />
+          <Column field="matchTotalWon" header="Total points won" />
+          <Column field="matchTotal" header="Total points played" />
         </DataTable>
       </template>
     </Card>
@@ -47,6 +48,7 @@ export default defineComponent({
           matchAverage: this.all_point_stats.wonMatch.average,
           matchAverageWon: this.all_point_stats.wonMatch.averageWon,
           matchAverageWinrate: this.all_point_stats.wonMatch.winrate,
+          matchTotalWon: this.all_point_stats.wonMatch.totalWon,
           matchTotal: this.all_point_stats.wonMatch.total,
         },
         {
@@ -54,6 +56,7 @@ export default defineComponent({
           matchAverage: this.all_point_stats.lostMatch.average,
           matchAverageWon: this.all_point_stats.lostMatch.averageWon,
           matchAverageWinrate: this.all_point_stats.lostMatch.winrate,
+          matchTotalWon: this.all_point_stats.lostMatch.totalWon,
           matchTotal: this.all_point_stats.lostMatch.total,
         },
         {
@@ -61,6 +64,7 @@ export default defineComponent({
           matchAverage: this.all_point_stats.match.average,
           matchAverageWon: this.all_point_stats.match.averageWon,
           matchAverageWinrate: this.all_point_stats.match.winrate,
+          matchTotalWon: this.all_point_stats.match.totalWon,
           matchTotal: this.all_point_stats.match.total,
         },
       ];

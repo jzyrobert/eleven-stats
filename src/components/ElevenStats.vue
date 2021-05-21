@@ -1,23 +1,25 @@
 <template>
   <div>
     <form @submit.prevent="collectStats">
-      <label class="p-m-2" for="id">Enter Eleven ID (exact) </label>
-      <InputText
-        type="text"
-        class="p-m-2"
-        @focus="resetName"
-        v-model="id"
-        name="id"
-      />
-      <label class="p-m-2" for="id"> or Eleven Name (exact) </label>
-      <InputText
-        type="text"
-        class="p-m-2"
-        @focus="resetID"
-        v-model="name"
-        name="name"
-      />
-      <Button class="p-m-2" label="submit" type="submit" />
+      <div>
+        <label class="p-m-2" for="id">Enter Eleven ID (exact) </label>
+        <InputText
+          type="text"
+          class="p-m-2"
+          @focus="resetName"
+          v-model="id"
+          name="id"
+        />
+        <label class="p-m-2" for="id"> or Eleven Name (exact) </label>
+        <InputText
+          type="text"
+          class="p-m-2"
+          @focus="resetID"
+          v-model="name"
+          name="name"
+        />
+        <Button class="p-m-2" label="submit" type="submit" />
+      </div>
       <label for="offset">UTC Offset:</label>
       <InputNumber
         id="offset"
@@ -38,13 +40,19 @@
         :max="7"
         :min="0"
       />
+      <label for="pullLimit"> Request (up to):</label>
+      <InputNumber
+        id="pullLimit"
+        inputStyle="width: 8rem"
+        v-model="pullLimit"
+        :min="0"
+      />
+      <label for="incomplete"> Complete matches only:</label>
+      <InputSwitch name="incomplete" v-model="complete" />
     </form>
 
     <div v-if="message">{{ message }}</div>
     <ProgressSpinner v-if="!loaded" />
-    <div v-if="loaded && matches.length > 0 && filteredMatches.length == 0">
-      Your selection does not match any matches!
-    </div>
     <div v-if="matches.length > 0">
       <label for="ranked">Match type: </label>
       <Dropdown
@@ -88,8 +96,37 @@
         :minDate="startDate"
         :maxDate="latestDate"
       />
+      <div class="p-mt-3">
+        <label for="selfRange">
+          My match ELO: {{ selfRange[0] }} - {{ selfRange[1] }}</label
+        >
+        <div class="p-m-3">
+          <Slider
+            name="selfRange"
+            style="margin: auto; width: 50%"
+            v-model="selfRange"
+            :range="true"
+            :min="selfMin"
+            :max="selfMax"
+          />
+        </div>
+        <label for="oppRange">
+          Opponent match ELO: {{ opponentRange[0] }} -
+          {{ opponentRange[1] }}</label
+        >
+        <div class="p-m-3">
+          <Slider
+            name="oppRange"
+            style="margin: auto; width: 50%"
+            v-model="opponentRange"
+            :range="true"
+            :min="opponentMin"
+            :max="opponentMax"
+          />
+        </div>
+      </div>
       <h2 v-html="formatDetailsHTML"></h2>
-      <h3>
+      <h3 v-if="filteredMatches.length > 0">
         I want to know about:
         <ToggleButton
           class="p-mr-2"
@@ -125,13 +162,14 @@
             <MostPlayedCard
               v-if="selfStats"
               v-bind:all_match_stats="all_match_stats"
+              v-bind:hasRanked="hasRanked"
             />
             <EloGainsCard
-              v-if="ranked !== 'unranked' && eloStats"
+              v-if="hasRanked && ranked !== 'unranked' && eloStats"
               v-bind:all_ranked_stats="all_ranked_stats"
             />
             <GoodBadCard
-              v-if="ranked !== 'unranked' && eloStats"
+              v-if="hasRanked && ranked !== 'unranked' && eloStats"
               v-bind:all_ranked_stats="all_ranked_stats"
             />
             <StreakCard
@@ -175,6 +213,7 @@
             <MostPlayedOpponentsCard
               v-if="selfStats"
               v-bind:ranked="ranked"
+              v-bind:hasRanked="hasRanked"
               v-bind:all_player_stats="all_player_stats"
             />
             <MostImprovedCard
@@ -186,7 +225,7 @@
               v-bind:all_player_stats="all_player_stats"
             />
             <EloTakenCard
-              v-if="eloStats && ranked !== 'unranked'"
+              v-if="hasRanked && eloStats && ranked !== 'unranked'"
               v-bind:all_ranked_stats="all_ranked_stats"
             />
             <SetInfoCard
@@ -205,6 +244,10 @@
               v-if="selfStats"
               v-bind:all_round_stats="all_round_stats"
             />
+            <LongestRoundCard
+              v-if="selfStats"
+              v-bind:all_round_stats="all_round_stats"
+            />
             <SetPointsCard
               v-if="selfStats"
               v-bind:all_point_stats="all_point_stats"
@@ -212,10 +255,6 @@
             <MatchPointsCard
               v-if="selfStats"
               v-bind:all_point_stats="all_point_stats"
-            />
-            <LongestRoundCard
-              v-if="selfStats"
-              v-bind:all_round_stats="all_round_stats"
             />
           </div>
         </TabPanel>
@@ -227,8 +266,12 @@
               v-bind:all_player_stats="all_player_stats"
             />
             <MostEloChart
-              v-if="eloStats"
+              v-if="hasRanked && eloStats"
               v-bind:all_ranked_stats="all_ranked_stats"
+            />
+            <EloRangeChart
+              v-if="oppStats"
+              v-bind:all_player_stats="all_player_stats"
             />
           </div>
         </TabPanel>
@@ -240,6 +283,7 @@
 <script lang="ts">
 import * as STATS from "../util/stats";
 import { processData, filterMatches, formatScore } from "../util/parsing";
+import { minBy, maxBy, debounce } from "lodash";
 // import * as SAMPLE from "../util/sample";
 import * as SAMPLE_HUGE from "../util/sampleLarge";
 // import * as SAMPLE_TEST from "../util/predator";
@@ -277,6 +321,8 @@ import {
   InputNumber,
   Avatar,
   ToggleButton,
+  Slider,
+  InputSwitch,
 } from "./primeIndex";
 import * as CARDS from "../cards/index";
 import * as CHARTS from "../charts/index";
@@ -298,11 +344,14 @@ export default defineComponent({
     InputNumber,
     Avatar,
     ToggleButton,
+    Slider,
+    InputSwitch,
 
     // Custom charts
     LossChart: CHARTS.LossChart,
     MostPlayedChart: CHARTS.MostPlayedChart,
     MostEloChart: CHARTS.MostEloChart,
+    EloRangeChart: CHARTS.EloRangeChart,
 
     // Custom cards
     MatchCard: CARDS.MatchCard,
@@ -354,57 +403,8 @@ export default defineComponent({
       { name: "Higher Opponent ELO", val: Higher.Higher },
       { name: "Lower Opponent ELO", val: Higher.Lower },
     ]);
-    const details = computed(() => {
-      var message = `<i>${ranked.value}</i> ${filteredMatches.value.length} matches `;
-      if (ranked.value !== Ranked.All) {
-        message = `${filteredMatches.value.length} <i>${ranked.value}</i> matches `;
-      }
-      if (home.value !== Home.All) {
-        if (home.value === Home.Home) {
-          message += "that you <i>challenged</i> ";
-        } else {
-          message += "that you <i>accepted</i> ";
-        }
-      }
-      if (higher.value !== Higher.All) {
-        if (higher.value === Higher.Higher) {
-          message += "against <i>higher</i> ranked opponents ";
-        } else {
-          message += "against <i>lower</i> ranked opponents ";
-        }
-      }
-      if (
-        startDate.value.getTime() == earliestDate.value.getTime() &&
-        endDate.value.getTime() != latestDate.value.getTime()
-      ) {
-        message += `<i>before</i> ${endDate.value.toDateString()}`;
-      } else if (
-        endDate.value.getTime() == latestDate.value.getTime() &&
-        startDate.value.getTime() != earliestDate.value.getTime()
-      ) {
-        message += `<i>after</i> ${startDate.value.toDateString()}`;
-      } else if (
-        startDate.value.getTime() != earliestDate.value.getTime() &&
-        endDate.value.getTime() != latestDate.value.getTime()
-      ) {
-        message += `<i>between</i> ${startDate.value.toDateString()} and ${endDate.value.toDateString()}`;
-      }
-      return message;
-    });
 
     const matches = ref(new Array<MatchData>());
-    const filteredMatches: ComputedRef<Array<MatchData>> = computed(() =>
-      filterMatches(
-        matches.value,
-        ranked.value,
-        home.value,
-        higher.value,
-        startDate.value,
-        endDate.value,
-        dayCutoff.value
-      )
-    );
-    const matchNumber = computed(() => filteredMatches.value.length);
 
     const startDate: Ref<Date> = ref(new Date());
     const endDate: Ref<Date> = ref(new Date());
@@ -433,19 +433,21 @@ export default defineComponent({
     const oppStats = ref(true);
     const eloStats = ref(true);
 
-    onMounted(() => {
-      matches.value = processData(
-        // SAMPLE.SAMPLE_ID_BIG,
-        // SAMPLE.SAMPLE_MATCHES_BIG,
-        // SAMPLE.SAMPLE_ROUNDS_BIG
-        SAMPLE_HUGE.SAMPLE_ID_HUGE,
-        SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
-        SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
-        // SAMPLE_TEST.SAMPLE_ID_TEST,
-        //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
-        //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
-      );
-    });
+    const complete = ref(true);
+
+    // onMounted(() => {
+    //   matches.value = processData(
+    //     // SAMPLE.SAMPLE_ID_BIG,
+    //     // SAMPLE.SAMPLE_MATCHES_BIG,
+    //     // SAMPLE.SAMPLE_ROUNDS_BIG
+    //     SAMPLE_HUGE.SAMPLE_ID_HUGE,
+    //     SAMPLE_HUGE.SAMPLE_MATCHES_HUGE,
+    //     SAMPLE_HUGE.SAMPLE_ROUNDS_HUGE
+    //     // SAMPLE_TEST.SAMPLE_ID_TEST,
+    //     //     SAMPLE_TEST.SAMPLE_MATCHES_TEST,
+    //     //     SAMPLE_TEST.SAMPLE_ROUNDS_TEST
+    //   );
+    // });
 
     return {
       loaded,
@@ -457,15 +459,12 @@ export default defineComponent({
       ranked,
       home,
       higher,
-      details,
 
       rankedOptions,
       homeOptions,
       higherOptions,
 
       matches,
-      filteredMatches,
-      matchNumber,
       startDate,
       endDate,
       earliestDate,
@@ -478,17 +477,105 @@ export default defineComponent({
       selfStats,
       oppStats,
       eloStats,
+
+      complete,
+    };
+  },
+  data() {
+    return {
+      pullLimit: 0,
+      selfRange: [0, 4000],
+      actualSelfRange: [0, 4000],
+      opponentRange: [0, 4000],
+      actualOpponentRange: [0, 4000],
     };
   },
   computed: {
+    filteredMatches(): Array<MatchData> {
+      return filterMatches(
+        this.matches,
+        this.ranked,
+        this.home,
+        this.higher,
+        this.startDate,
+        this.endDate,
+        this.dayCutoff,
+        this.complete,
+        this.actualSelfRange,
+        this.actualOpponentRange
+      );
+    },
+    details(): string {
+      var message = `<i>${this.ranked}</i> ${this.filteredMatches.length} matches `;
+      if (this.ranked !== Ranked.All) {
+        message = `${this.filteredMatches.length} <i>${this.ranked}</i> matches `;
+      }
+      if (this.home !== Home.All) {
+        if (this.home === Home.Home) {
+          message += "that you <i>challenged</i> ";
+        } else {
+          message += "that you <i>accepted</i> ";
+        }
+      }
+      if (this.higher !== Higher.All) {
+        if (this.higher === Higher.Higher) {
+          message += "against <i>higher</i> ranked opponents ";
+        } else {
+          message += "against <i>lower</i> ranked opponents ";
+        }
+      }
+      if (
+        this.startDate.getTime() == this.earliestDate.getTime() &&
+        this.endDate.getTime() != this.latestDate.getTime()
+      ) {
+        message += `<i>before</i> ${this.endDate.toDateString()}`;
+      } else if (
+        this.endDate.getTime() == this.latestDate.getTime() &&
+        this.startDate.getTime() != this.earliestDate.getTime()
+      ) {
+        message += `<i>after</i> ${this.startDate.toDateString()}`;
+      } else if (
+        this.startDate.getTime() != this.earliestDate.getTime() &&
+        this.endDate.getTime() != this.latestDate.getTime()
+      ) {
+        message += `<i>between</i> ${this.startDate.toDateString()} and ${this.endDate.toDateString()}`;
+      }
+      if (
+        this.selfRange[0] != this.selfMin ||
+        this.selfRange[1] != this.selfMax
+      ) {
+        message += ` when you were ${this.selfRange[0]}-${this.selfRange[1]}`;
+        if (
+          this.opponentRange[0] != this.opponentMin ||
+          this.opponentRange[1] != this.opponentMax
+        ) {
+          message += ` and they were ${this.opponentRange[0]}-${this.opponentRange[1]}`;
+        }
+      } else if (
+        this.opponentRange[0] != this.opponentMin ||
+        this.opponentRange[1] != this.opponentMax
+      ) {
+        message += ` when they were ${this.opponentRange[0]}-${this.opponentRange[1]}`;
+      }
+      return message;
+    },
+    matchNumber(): number {
+      return this.filteredMatches.length;
+    },
     formatDetailsHTML(): string {
-      return `You selected ${this.details}`;
+      if (this.filteredMatches.length == 0) {
+        return "Your selection does not match any matches!";
+      }
+      return `Statistics calculated from ${this.details}`;
+    },
+    hasRanked(): boolean {
+      return this.filteredMatches.filter((m) => m.ranked).length > 0;
     },
     all_match_stats(): MatchStatistics {
-      return STATS.ALL_MATCH_STATS(this.filteredMatches);
+      return STATS.ALL_MATCH_STATS(this.filteredMatches, this.dayCutoff);
     },
     all_ranked_stats(): RankedStatistics {
-      return STATS.ALL_RANKED_STATS(this.filteredMatches);
+      return STATS.ALL_RANKED_STATS(this.filteredMatches, this.dayCutoff);
     },
     all_player_stats(): PlayerStatistics {
       return STATS.ALL_PLAYER_STATS(this.filteredMatches);
@@ -499,8 +586,66 @@ export default defineComponent({
     all_point_stats(): PointStatistics {
       return STATS.ALL_POINT_STATS(this.filteredMatches);
     },
+    selfMin(): number {
+      if (this.matches.length == 0) {
+        return 0;
+      }
+      return Math.floor(
+        minBy(this.matches, (m) => m.self["match-elo"])!.self["match-elo"]
+      );
+    },
+    selfMax(): number {
+      if (this.matches.length == 0) {
+        return 0;
+      }
+      return Math.ceil(
+        maxBy(this.matches, (m) => m.self["match-elo"])!.self["match-elo"]
+      );
+    },
+    opponentMin(): number {
+      if (this.matches.length == 0) {
+        return 0;
+      }
+      return Math.floor(
+        minBy(this.matches, (m) => m.opponent["match-elo"])!.opponent[
+          "match-elo"
+        ]
+      );
+    },
+    opponentMax(): number {
+      if (this.matches.length == 0) {
+        return 0;
+      }
+      return Math.ceil(
+        maxBy(this.matches, (m) => m.opponent["match-elo"])!.opponent[
+          "match-elo"
+        ]
+      );
+    },
   },
   watch: {
+    selfMin(val: number) {
+      this.selfRange[0] = val;
+      this.actualSelfRange[0] = val;
+    },
+    selfMax(val: number) {
+      this.selfRange[1] = val;
+      this.actualSelfRange[1] = val;
+    },
+    opponentMin(val: number) {
+      this.opponentRange[0] = val;
+      this.actualOpponentRange[0] = val;
+    },
+    opponentMax(val: number) {
+      this.opponentRange[1] = val;
+      this.actualOpponentRange[1] = val;
+    },
+    selfRange(newValue: Array<number>) {
+      this.debounceSelfRange(newValue);
+    },
+    opponentRange(newValue: Array<number>) {
+      this.debounceOpponentRange(newValue);
+    },
     utcOffset() {
       this.matches = this.matches.map((m) => {
         m.offsetDate = m.date.add(this.utcOffset, "hours");
@@ -521,6 +666,14 @@ export default defineComponent({
     resetID() {
       this.id = "";
     },
+    debounceSelfRange: debounce(function (value: Array<number>) {
+      // @ts-ignore
+      this.actualSelfRange = value;
+    }, 1000),
+    debounceOpponentRange: debounce(function (value: Array<number>) {
+      // @ts-ignore
+      this.actualOpponentRange = value;
+    }, 1000),
     async getJSON(url: string) {
       const response = await fetch(url);
       return response.json();
@@ -574,23 +727,13 @@ export default defineComponent({
       const matches = [];
       const rounds = [];
       var nexturl = `https://www.elevenvr.club/accounts/${this.id}/matches`;
-      // let currentPage = 0;
-      // let totalPages = 0;
-      while (nexturl) {
-        // this.message = `Collecting match data: ${currentPage} of ${totalPages} pages`;
+      while (nexturl && ((this.pullLimit == 0) || (matches.length < this.pullLimit))) {
         const currentMatchData = await this.getJSON(nexturl);
         matches.push(...currentMatchData["data"]);
         rounds.push(...currentMatchData["included"]);
-        // currentPage++;
-        // if (currentPage <= 1) {
-        //   totalPages = parseInt(
-        //     (currentMatchData["links"]["last"] as string).match(
-        //       /page%5Bnumber%5D=(\d+)/
-        //     )![1]
-        //   );
-        // }
         nexturl = currentMatchData["links"]["next"];
       }
+      console.log(matches)
       this.matches = processData(id, matches, rounds);
       this.message = "";
       this.loaded = true;

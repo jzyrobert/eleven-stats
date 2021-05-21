@@ -6,7 +6,7 @@
         <p>
           Of the remaining
           {{ 100 - Number(all_round_stats.matchesTo3) }}% matches that end in
-          <b>2 rounds</b> (or less??), you won
+          <b>2 rounds</b>, you won
           <b>{{ all_round_stats.matchesTo2Won }}%</b> of them.
         </p>
         <p>

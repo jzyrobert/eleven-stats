@@ -20,19 +20,25 @@
         <div v-else>
           <p>
             The <b>most</b> matches you played was on
-            {{ dayjs(all_match_stats.perDay.maxDate).format("YYYY-MM-DD") }},
+            {{ all_match_stats.perDay.maxDate.format("YYYY-MM-DD") }},
             with an impressive
             <b>{{ all_match_stats.perDay.maxPlayed }}</b> matches.
           </p>
-          <p>
-            Of those, you <b>won</b> {{ all_match_stats.perDay.maxWins }}, with
-            a net ELO change of <b>{{ all_match_stats.perDay.maxNetElo }}</b
-            >.
-          </p>
-          <p>
-            You started the day with
-            <b>{{ all_match_stats.perDay.maxStartElo }}</b> ELO and ended with
-            <b>{{ all_match_stats.perDay.maxEndElo }}</b> ELO
+          <div v-if="hasRanked">
+            <p>
+              Of those, you <b>won</b> {{ all_match_stats.perDay.maxWins }},
+              with a net ELO change of
+              <b>{{ all_match_stats.perDay.maxNetElo }}</b
+              >.
+            </p>
+            <p>
+              You started the day with
+              <b>{{ all_match_stats.perDay.maxStartElo }}</b> ELO and ended with
+              <b>{{ all_match_stats.perDay.maxEndElo }}</b> ELO
+            </p>
+          </div>
+          <p v-else>
+            Of those, you <b>won</b> {{ all_match_stats.perDay.maxWins }}.
           </p>
         </div>
       </template>
@@ -58,6 +64,10 @@ export default defineComponent({
     Card,
   },
   props: {
+    hasRanked: {
+      type: Boolean,
+      required: true,
+    },
     all_match_stats: {
       type: Object as PropType<MatchStatistics>,
       // required: false,

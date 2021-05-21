@@ -35,18 +35,23 @@ export default defineComponent({
     const chartRef: Ref<Vue3Chart> = ref(null) as unknown as Ref<Vue3Chart>;
 
     return {
-      chartRef
+      chartRef,
     };
   },
   data() {
     return {
       baseData: {
         type: "bar",
-        options: {
-        },
+        options: {},
         data: {
           labels: [],
-          datasets: [],
+          datasets: [
+            {
+              label: "label",
+              data: [],
+              backgroundColor: [], // Add colours
+            },
+          ],
         },
       } as ChartConfiguration,
     };
@@ -55,7 +60,13 @@ export default defineComponent({
     chartData(): ChartData {
       return {
         labels: [],
-        datasets: [],
+        datasets: [
+          {
+            label: "label",
+            data: [],
+            backgroundColor: [], // Add colours
+          },
+        ],
       };
     },
   },

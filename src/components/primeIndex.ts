@@ -11,3 +11,5 @@ export { default as TabPanel } from "primevue/tabpanel";
 export { default as InputNumber } from "primevue/inputnumber";
 export { default as Avatar } from "primevue/avatar";
 export { default as ToggleButton } from "primevue/togglebutton";
+export { default as Slider } from "primevue/slider"
+export { default as InputSwitch } from "primevue/inputswitch"

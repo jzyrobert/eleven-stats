@@ -18,6 +18,11 @@
           <b>{{ all_match_stats.perDay.average }}</b> matches per day, counting
           <b>only</b> days you played.
         </p>
+        <p>
+          Your first game was on
+          <b>{{ all_match_stats.perDay.startDate.format("YYYY-MM-DD") }}</b> and
+          you have played on <b>{{ all_match_stats.perDay.daysPlayed }}</b> of <b>{{ all_match_stats.perDay.daysSinceStart }}</b> days since then.
+        </p>
       </template>
     </Card>
   </div>
@@ -45,7 +50,7 @@ export default defineComponent({
     all_match_stats: {
       type: Object as PropType<MatchStatistics>,
       // required: false,
-      required: true
+      required: true,
     },
     all_ranked_stats: {
       type: Object as PropType<RankedStatistics>,
@@ -55,7 +60,7 @@ export default defineComponent({
     all_player_stats: {
       type: Object as PropType<PlayerStatistics>,
       // required: false,
-      required: true
+      required: true,
     },
     all_round_stats: {
       type: Object as PropType<RoundStatistics>,

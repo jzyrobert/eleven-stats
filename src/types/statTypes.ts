@@ -1,4 +1,4 @@
-import dayjs, { Dayjs } from "dayjs"
+import dayjs, { Dayjs } from "dayjs";
 
 export const enum Ranked {
   All = "all",
@@ -7,15 +7,15 @@ export const enum Ranked {
 }
 
 export const enum Home {
-    All = "all",
-    Home = "home",
-    Away = "away"
+  All = "all",
+  Home = "home",
+  Away = "away",
 }
 
 export const enum Higher {
-    All = "all",
-    Higher = "higher",
-    Lower = "lower"
+  All = "all",
+  Higher = "higher",
+  Lower = "lower",
 }
 //Example match data
 // {
@@ -159,12 +159,12 @@ export interface MatchData {
   complete: boolean;
   self: PlayerData;
   opponent: PlayerData;
-  "elo-diff": number,
-  "elo-diff-formatted": string,
-  "elo-diff-now": number,
-  "elo-diff-now-formatted": string,
+  "elo-diff": number;
+  "elo-diff-formatted": string;
+  "elo-diff-now": number;
+  "elo-diff-now-formatted": string;
   "elo-change": number;
-  "elo-change-corrected": number,
+  "elo-change-corrected": number;
   // "elo-change-formatted": string,
   date: Dayjs;
   offsetDate: Dayjs;
@@ -173,12 +173,13 @@ export interface MatchData {
 
 export interface RoundData {
   id: string;
-  "opponent-id": number,
-  "opponent-username": string,
+  "opponent-id": number;
+  "opponent-username": string;
   "self-score": number;
   "opponent-score": number;
-  "score-formatted": string,
+  "score-formatted": string;
   won: boolean;
+  isDeuce: boolean;
   complete: boolean;
 }
 
@@ -188,7 +189,7 @@ export interface PlayerData {
   "current-elo": number;
   "match-elo": number;
   "elo-gain": number;
-  "elo-gain-formatted": string,
+  "elo-gain-formatted": string;
   rank: number;
   wins: number;
   losses: number;
@@ -196,157 +197,193 @@ export interface PlayerData {
 }
 
 export interface MatchStatistics {
-  played: number,
-  won: number,
-  winrate: number,
-  average_elo: number,
-  average_elo_diff: number,
-  perDay: MatchDayStatistics,
-  winStreak: StreakStatistics,
-  lossStreak: StreakStatistics
+  played: number;
+  won: number;
+  winrate: number;
+  average_elo: number;
+  average_elo_diff: number;
+  perDay: MatchDayStatistics;
+  winStreak: StreakStatistics;
+  lossStreak: StreakStatistics;
 }
 
 export interface MatchupStatistics {
-  first: MatchData,
-  last: MatchData
+  first: MatchData;
+  last: MatchData;
 }
 
 export interface MatchDayStatistics {
-  average: number,
-  maxDate: Date,
-  maxPlayed: number,
-  maxWins: number,
-  maxNetElo: number,
-  maxStartElo: number,
-  maxEndElo: number
+  average: number;
+  startDate: Dayjs;
+  daysSinceStart: number,
+  daysPlayed: number;
+  maxDate: Dayjs;
+  maxPlayed: number;
+  maxWins: number;
+  maxNetElo: number;
+  maxStartElo: number;
+  maxEndElo: number;
 }
 
 export interface StreakStatistics {
-  played: number,
-  startDate: Dayjs,
-  endDate: Dayjs,
-  startElo: number,
-  endElo: number,
-  netElo: number,
-  matches: Array<MatchData>
+  played: number;
+  startDate: Dayjs;
+  endDate: Dayjs;
+  startElo: number;
+  endElo: number;
+  netElo: number;
+  matches: Array<MatchData>;
 }
 
 export interface PlayerStatistics {
-  unique_opponents: UniqueOpponentStatistics,
-  unique_opponents_elo: number,
-  opponent_winrate: number,
-  highestElo: MatchupStatistics,
-  highestEloNow: MatchupStatistics,
-  lowestElo: MatchupStatistics,
-  lowestEloNow: MatchupStatistics,
-  mostImproved: MatchupStatistics,
-  leastImproved: MatchupStatistics,
-  mostPlayed: MostPlayedStatistics,
-  mostWon: MostPlayedStatistics,
-  mostLost: MostPlayedStatistics,
+  unique_opponents: UniqueOpponentStatistics;
+  unique_opponents_elo: number;
+  opponent_winrate: number;
+  highestElo: MatchupStatistics;
+  highestEloNow: MatchupStatistics;
+  lowestElo: MatchupStatistics;
+  lowestEloNow: MatchupStatistics;
+  mostImproved: MatchupStatistics;
+  leastImproved: MatchupStatistics;
+  mostPlayed: MostPlayedStatistics;
+  mostWon: MostPlayedStatistics;
+  mostLost: MostPlayedStatistics;
+  opponentRanges: Array<RangeStatistics>;
+}
+
+export interface RangeStatistics {
+  rangeStart: number;
+  rangeEnd: number;
+  rangeFormatted: string;
+  played: number;
+  uniquePlayed: number;
+  won: number;
+  lost: number;
+  winrate: number;
+  eloNet: number;
+  eloGained: number;
+  eloLost: number;
 }
 export interface MostPlayedStatistics {
-  mostPlayedList: Array<String>,
-  mostPlayedCount: Array<Number>,
-  mostPlayedWon: Array<Number>,
-  mostPlayedLost: Array<Number>,
-  username: string,
-  id: number,
-  matches: number,
-  won: number,
-  gain: number,
-  data: Array<MatchData>
+  mostPlayedList: Array<String>;
+  mostPlayedCount: Array<Number>;
+  mostPlayedWon: Array<Number>;
+  mostPlayedLost: Array<Number>;
+  username: string;
+  id: number;
+  matches: number;
+  won: number;
+  gain: number;
+  data: Array<MatchData>;
 }
 
 export interface UniqueOpponentStatistics {
-  winrate: number,
-  averageEloDiff: number,
-  uniqueCount: number,
-  neverWonCount: number,
-  neverLostCount: number,
-  playedOnceCount: number,
-  playedMoreCount: number
+  winrate: number;
+  averageEloDiff: number;
+  uniqueCount: number;
+  neverWonCount: number;
+  neverLostCount: number;
+  playedOnceCount: number;
+  playedMoreCount: number;
 }
 
 export interface RankedStatistics {
-  average_change: number,
-  average_gain: number,
-  average_loss: number,
-  total_change: number,
-  total_gain: number,
-  total_loss: number,
-  mostElo: GainStatistics,
-  bestDay: DayStatistics,
-  worstDay: DayStatistics
+  average_change: number;
+  average_gain: number;
+  average_loss: number;
+  total_change: number;
+  total_gain: number;
+  total_loss: number;
+  mostElo: GainStatistics;
+  bestDay: DayStatistics;
+  worstDay: DayStatistics;
 }
 
 export interface DayStatistics {
-  date: Dayjs,
-  played: number,
-  won: number,
-  gain: number,
-  startElo: number,
-  endElo: number
+  date: Dayjs;
+  played: number;
+  won: number;
+  gain: number;
+  startElo: number;
+  endElo: number;
 }
 
 export interface GainStatistics {
-  mostTotalList: Array<string>
-  mostNetList: Array<string>
-  mostGainedList: Array<string>
-  mostLostList: Array<string>
-  gains: { [name: string] : GainInfo }
+  mostTotalList: Array<string>;
+  mostNetList: Array<string>;
+  mostGainedList: Array<string>;
+  mostLostList: Array<string>;
+  gains: { [name: string]: GainInfo };
 }
 
 export interface GainInfo {
-  id: number,
-  total: number,
-  net: number,
-  gained: number,
-  lost: number
+  id: number;
+  total: number;
+  net: number;
+  gained: number;
+  lost: number;
 }
 
 export interface RoundStatistics {
-  roundsPlayed: number,
-  roundsWon: number,
-  roundsWinrate: number,
-  averageRounds: number,
-  averageRoundsWon: number,
-  averageRoundsLost: number,
-  matchesTo3: number,
-  matchesTo3Won: number,
-  roundsToOvertime: number,
-  roundsToOvertimeWon: number,
-  matchesTo2Won: number,
-  hardWonRounds: number,
-  hardWonRoundsPercentage: number,
-  hardLostRounds: number,
-  hardLostRoundsPercentage: number,
-  longestRoundWon: RoundData,
-  longestRoundLost: RoundData,
-  matchesFirstRoundWon: number,
-  matchesFirstRoundLost: number,
-  incompleteRounds: number,
+  roundsPlayed: number;
+  roundsWon: number;
+  roundsWinrate: number;
+  averageRounds: number;
+  averageRoundsWon: number;
+  averageRoundsLost: number;
+  matchesTo3: number;
+  matchesTo3Won: number;
+  roundsToOvertime: number;
+  roundsToOvertimeWon: number;
+  matchesTo2Won: number;
+  hardWonRounds: number;
+  hardWonRoundsPercentage: number;
+  hardLostRounds: number;
+  hardLostRoundsPercentage: number;
+  longestRoundWon: RoundData;
+  longestRoundLost: RoundData;
+  matchesFirstRoundWon: number;
+  matchesFirstRoundLost: number;
+  incompleteRounds: number;
+  differenceStats: RoundDiffStatistics;
 }
 
+export interface RoundDiffStatistics {
+  deuceNextWinrate: number,
+  wonMatchDeuceNextWinrate: number,
+  lostMatchDeuceNextWinrate: number,
+  pointDiffWins: Array<RoundDiff>,
+  pointDiffLoss: Array<RoundDiff>,
+  pointDiffWinrate: Array<RoundDiff>,
+  prevPointDiffWins: Array<RoundDiff>
+  prevPointDiffLoss: Array<RoundDiff>
+  prevPointDiffWinrate: Array<RoundDiff>
+}
+
+export interface RoundDiff {
+  diff: number,
+  stat: number,
+}
 
 export interface PointStatistics {
   // Across all sets
-  set: PointSumStatistics,
+  set: PointSumStatistics;
   // Across won sets
-  wonSet: PointSumStatistics,
+  wonSet: PointSumStatistics;
   // Across lost sets
-  lostSet: PointSumStatistics
+  lostSet: PointSumStatistics;
   // Across all matches
-  match: PointSumStatistics
+  match: PointSumStatistics;
   // Across won matches
-  wonMatch: PointSumStatistics
+  wonMatch: PointSumStatistics;
   // Across lost matches
-  lostMatch: PointSumStatistics
+  lostMatch: PointSumStatistics;
 }
 
 export interface PointSumStatistics {
-  total: number,
-  average: number,
-  averageWon: number,
-  winrate: number
+  total: number;
+  totalWon: number;
+  average: number;
+  averageWon: number;
+  winrate: number;
 }

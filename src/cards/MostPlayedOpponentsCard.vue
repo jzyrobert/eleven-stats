@@ -3,7 +3,7 @@
     <Card class="p-p-2">
       <template #title>Old friends and enemies</template>
       <template #content>
-        <div v-if="ranked === 'unranked'">
+        <div v-if="ranked === 'unranked' || !hasRanked">
           <p>
             <b>Most</b> matches: {{ all_player_stats.mostPlayed.username }} ({{
               all_player_stats.mostPlayed.id
@@ -29,7 +29,7 @@
             >.
           </p>
         </div>
-        <div v-if="ranked !== 'unranked'">
+        <div v-else>
           <p>
             <b>Most</b> matches: {{ all_player_stats.mostPlayed.username }} ({{
               all_player_stats.mostPlayed.id
@@ -79,6 +79,10 @@ export default defineComponent({
     Card,
   },
   props: {
+    hasRanked: {
+      type: Boolean,
+      required: true
+    },
     ranked: {
       type: String,
       required: true
