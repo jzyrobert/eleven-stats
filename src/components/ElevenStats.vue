@@ -563,7 +563,7 @@ export default defineComponent({
       ) {
         message += ` when they were ${this.opponentRange[0]}-${this.opponentRange[1]}`;
       }
-      message += `. See your official profile at <a href="url">https://www.elevenvr.net/eleven/${this.id}</a>`;
+      message += `. See your <a href="https://www.elevenvr.net/eleven/${this.id}">official profile</>.`;
       return message;
     },
     matchNumber(): number {
