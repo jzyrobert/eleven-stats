@@ -352,6 +352,7 @@ export interface RoundDiffStatistics {
   deuceNextWinrate: number,
   wonMatchDeuceNextWinrate: number,
   lostMatchDeuceNextWinrate: number,
+  pointDiffs: Array<number>
   pointDiffWins: Array<RoundDiff>,
   pointDiffLoss: Array<RoundDiff>,
   pointDiffWinrate: Array<RoundDiff>,

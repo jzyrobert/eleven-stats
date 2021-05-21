@@ -137,7 +137,7 @@ export function MATCHES_DAY_STATISTICS(
   return {
     average,
     startDate,
-    daysSinceStart: dayjs().diff(startDate, "days"),
+    daysSinceStart: dayjs().diff(startDate, "days") + 1,
     daysPlayed,
     maxDate: dayjs(maxDate!),
     maxPlayed: dayCounts[maxDate!],
@@ -777,6 +777,7 @@ export function ALL_DIFF_STATS(matches: Array<MatchData>): RoundDiffStatistics {
     m.rounds.filter((r, index) => index > 0 && m.rounds[index - 1].isDeuce)
   );
 
+  const possiblePointDiffs = [...Array(10).keys()].map((i) => i + 2);
   const groupedPrevPointDiffWins = _.reduce(
     matches,
     (dict, m) => {
@@ -811,20 +812,20 @@ export function ALL_DIFF_STATS(matches: Array<MatchData>): RoundDiffStatistics {
     },
     {} as { [diff: number]: Array<RoundData> }
   );
-  const prevPointDiffWins: Array<RoundDiff> = Object.keys(
-    groupedPrevPointDiffWins
-  ).map((p) => {
+  const prevPointDiffWins: Array<RoundDiff> = possiblePointDiffs.map((p) => {
     return {
-      diff: Number(p),
-      stat: groupedPrevPointDiffWins[Number(p)].length,
+      diff: p,
+      stat:
+        p in groupedPrevPointDiffWins
+          ? groupedPrevPointDiffWins[Number(p)].length
+          : 0,
     };
   });
-  const prevPointDiffLoss: Array<RoundDiff> = Object.keys(
-    groupedPrevPointDiffLoss
-  ).map((p) => {
+  const prevPointDiffLoss: Array<RoundDiff> = possiblePointDiffs.map((p) => {
     return {
-      diff: Number(p),
-      stat: groupedPrevPointDiffLoss[Number(p)].length,
+      diff: p,
+      stat:
+        p in groupedPrevPointDiffLoss ? groupedPrevPointDiffLoss[p].length : 0,
     };
   });
 
@@ -837,23 +838,19 @@ export function ALL_DIFF_STATS(matches: Array<MatchData>): RoundDiffStatistics {
     rounds.filter((r) => !r.won),
     (r) => r["opponent-score"] - r["self-score"]
   );
-  const pointDiffWins: Array<RoundDiff> = Object.keys(groupedPointDiffWins).map(
-    (p) => {
-      return {
-        diff: Number(p),
-        stat: groupedPointDiffWins[p].length,
-      };
-    }
-  );
+  const pointDiffWins: Array<RoundDiff> = possiblePointDiffs.map((p) => {
+    return {
+      diff: Number(p),
+      stat: p in groupedPointDiffWins ? groupedPointDiffWins[p].length : 0,
+    };
+  });
 
-  const pointDiffLoss: Array<RoundDiff> = Object.keys(groupedPointDiffLoss).map(
-    (p) => {
-      return {
-        diff: Number(p),
-        stat: groupedPointDiffLoss[p].length,
-      };
-    }
-  );
+  const pointDiffLoss: Array<RoundDiff> = possiblePointDiffs.map((p) => {
+    return {
+      diff: Number(p),
+      stat: p in groupedPointDiffLoss ? groupedPointDiffLoss[p].length : 0,
+    };
+  });
   return {
     deuceNextWinrate: round(
       deuceRounds.filter((r) => r.won).length / deuceRounds.length,
@@ -869,6 +866,7 @@ export function ALL_DIFF_STATS(matches: Array<MatchData>): RoundDiffStatistics {
         lostMatchDeuceRounds.length,
       true
     ),
+    pointDiffs: possiblePointDiffs,
     pointDiffWins,
     pointDiffLoss,
     pointDiffWinrate: pointDiffWins.map((p) => {
@@ -898,7 +896,7 @@ export function ALL_DIFF_STATS(matches: Array<MatchData>): RoundDiffStatistics {
       return {
         diff: p.diff,
         stat: round(
-          p.stat / (p.stat + groupedPointDiffLoss[p.diff].length),
+          p.stat / (p.stat + groupedPrevPointDiffLoss[p.diff].length),
           true
         ),
       };

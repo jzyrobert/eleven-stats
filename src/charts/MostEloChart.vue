@@ -2,7 +2,8 @@
   <div class="cardbox p-col-12 p-md-6 p-lg-4">
     <Card class="p-p-2">
       <template #title
-        >Opponents with <Dropdown v-model="direction" :options="directionOptions" />
+        >Opponents with
+        <Dropdown v-model="direction" :options="directionOptions" />
         <Dropdown v-model="choice" :options="choiceOptions" /> ELO
         gain</template
       >
@@ -59,33 +60,29 @@ export default defineComponent({
           scales: {
             x: {
               stacked: true,
+              title: {
+                display: true,
+                text: "Opponents",
+              },
             },
             y: {
               stacked: true,
+              title: {
+                display: true,
+                text: "ELO",
+              },
             },
           },
         },
         data: {
-          labels: this.all_ranked_stats.mostElo.mostTotalList.slice(0, 10),
-          datasets: [
-            {
-              label: "Gained",
-              data: this.all_ranked_stats.mostElo.mostTotalList
-                .slice(0, 10)
-                .map((l) => this.all_ranked_stats.mostElo.gains[l].gained),
-              backgroundColor: Array(10).fill("#1fcf39"),
-            },
-            {
-              label: "Lost",
-              data: this.all_ranked_stats.mostElo.mostTotalList
-                .slice(0, 10)
-                .map((l) => -1 * this.all_ranked_stats.mostElo.gains[l].lost),
-              backgroundColor: Array(10).fill("#c91f1c"),
-            },
-          ],
+          labels: [],
+          datasets: [],
         },
       } as ChartConfiguration,
     };
+  },
+  mounted() {
+    this.updateChart()
   },
   computed: {
     chartData(): ChartData {
@@ -99,7 +96,7 @@ export default defineComponent({
       }
       let labels = data.slice(0, 10);
       if (this.direction == "least") {
-        labels = data.slice(-10).reverse()
+        labels = data.slice(-10).reverse();
       }
       return {
         labels,

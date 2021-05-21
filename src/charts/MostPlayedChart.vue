@@ -54,35 +54,29 @@ export default defineComponent({
           scales: {
             x: {
               stacked: true,
+              title: {
+                display: true,
+                text: "Opponents",
+              },
             },
             y: {
               stacked: true,
+              title: {
+                display: true,
+                text: "Matches",
+              },
             },
           },
         },
         data: {
-          labels: this.all_player_stats.mostPlayed.mostPlayedList.slice(0, 10),
-          datasets: [
-            {
-              label: "Won",
-              data: this.all_player_stats.mostPlayed.mostPlayedWon.slice(
-                0,
-                10
-              ) as number[],
-              backgroundColor: Array(10).fill("#1fcf39"),
-            },
-            {
-              label: "Lost",
-              data: this.all_player_stats.mostPlayed.mostPlayedLost.slice(
-                0,
-                10
-              ) as number[],
-              backgroundColor: Array(10).fill("#c91f1c"),
-            },
-          ],
+          labels: [],
+          datasets: [],
         },
       } as ChartConfiguration,
     };
+  },
+  mounted() {
+    this.updateChart()
   },
   computed: {
     chartData(): ChartData {

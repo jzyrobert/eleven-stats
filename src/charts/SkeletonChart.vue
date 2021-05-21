@@ -45,16 +45,13 @@ export default defineComponent({
         options: {},
         data: {
           labels: [],
-          datasets: [
-            {
-              label: "label",
-              data: [],
-              backgroundColor: [], // Add colours
-            },
-          ],
+          datasets: [],
         },
       } as ChartConfiguration,
     };
+  },
+  mounted() {
+    this.updateChart()
   },
   computed: {
     chartData(): ChartData {

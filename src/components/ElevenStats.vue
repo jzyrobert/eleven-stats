@@ -151,7 +151,7 @@
         />My ELO
       </h3>
 
-      <TabView v-if="filteredMatches.length > 0">
+      <TabView v-model:activeIndex="activeIndex" v-if="filteredMatches.length > 0">
         <TabPanel header="Statistics">
           <div class="p-grid">
             <MatchCard
@@ -273,6 +273,11 @@
               v-if="oppStats"
               v-bind:all_player_stats="all_player_stats"
             />
+            <PointDiffChart
+              v-if="selfStats"
+              v-bind:activeIndex="activeIndex"
+              v-bind:all_round_stats="all_round_stats"
+            />
           </div>
         </TabPanel>
       </TabView>
@@ -284,16 +289,13 @@
 import * as STATS from "../util/stats";
 import { processData, filterMatches, formatScore } from "../util/parsing";
 import { minBy, maxBy, debounce } from "lodash";
-// import * as SAMPLE from "../util/sample";
 import * as SAMPLE_HUGE from "../util/sampleLarge";
-// import * as SAMPLE_TEST from "../util/predator";
 import {
   Ref,
   ref,
   defineComponent,
   onMounted,
   computed,
-  ComputedRef,
 } from "vue";
 import {
   Higher,
@@ -352,6 +354,7 @@ export default defineComponent({
     MostPlayedChart: CHARTS.MostPlayedChart,
     MostEloChart: CHARTS.MostEloChart,
     EloRangeChart: CHARTS.EloRangeChart,
+    PointDiffChart: CHARTS.PointDiffChart,
 
     // Custom cards
     MatchCard: CARDS.MatchCard,
@@ -483,6 +486,7 @@ export default defineComponent({
   },
   data() {
     return {
+      activeIndex: 0,
       pullLimit: 0,
       selfRange: [0, 4000],
       actualSelfRange: [0, 4000],
@@ -727,13 +731,16 @@ export default defineComponent({
       const matches = [];
       const rounds = [];
       var nexturl = `https://www.elevenvr.club/accounts/${this.id}/matches`;
-      while (nexturl && ((this.pullLimit == 0) || (matches.length < this.pullLimit))) {
+      while (
+        nexturl &&
+        (this.pullLimit == 0 || matches.length < this.pullLimit)
+      ) {
         const currentMatchData = await this.getJSON(nexturl);
         matches.push(...currentMatchData["data"]);
         rounds.push(...currentMatchData["included"]);
         nexturl = currentMatchData["links"]["next"];
       }
-      console.log(matches)
+      console.log(matches);
       this.matches = processData(id, matches, rounds);
       this.message = "";
       this.loaded = true;

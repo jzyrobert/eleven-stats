@@ -2,9 +2,15 @@ Done:
 Information about sets played(total/won/lost/etc)
 Info about points played (total/won/lost etc)
 Set/Point data in wins/losses
+Win streak/loss streak,
+Stats against elo range (graph?)
+Make it clearer stats are from selection only
+Add days played
+Limit matches pulled
 
 Todo:
+Winrate vs point difference
+Games/Wins vs day of week
+Games/Wins vs time of day
 
-Win streak/loss streak,
-
-Stats against elo range (graph?)
+Add link to official site

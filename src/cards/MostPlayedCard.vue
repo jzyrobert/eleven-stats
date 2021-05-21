@@ -1,6 +1,5 @@
 <template>
   <div
-    v-if="all_match_stats.perDay.maxPlayed > 5"
     class="cardbox p-col-12 p-md-6 p-lg-3"
   >
     <Card class="p-p-2">
