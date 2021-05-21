@@ -151,7 +151,10 @@
         />My ELO
       </h3>
 
-      <TabView v-model:activeIndex="activeIndex" v-if="filteredMatches.length > 0">
+      <TabView
+        v-model:activeIndex="activeIndex"
+        v-if="filteredMatches.length > 0"
+      >
         <TabPanel header="Statistics">
           <div class="p-grid">
             <MatchCard
@@ -278,6 +281,10 @@
               v-bind:activeIndex="activeIndex"
               v-bind:all_round_stats="all_round_stats"
             />
+            <MatchGraphChart
+              v-if="selfStats"
+              v-bind:all_match_stats="all_match_stats"
+            />
           </div>
         </TabPanel>
       </TabView>
@@ -290,13 +297,7 @@ import * as STATS from "../util/stats";
 import { processData, filterMatches, formatScore } from "../util/parsing";
 import { minBy, maxBy, debounce } from "lodash";
 import * as SAMPLE_HUGE from "../util/sampleLarge";
-import {
-  Ref,
-  ref,
-  defineComponent,
-  onMounted,
-  computed,
-} from "vue";
+import { Ref, ref, defineComponent, onMounted, computed } from "vue";
 import {
   Higher,
   Home,
@@ -355,6 +356,7 @@ export default defineComponent({
     MostEloChart: CHARTS.MostEloChart,
     EloRangeChart: CHARTS.EloRangeChart,
     PointDiffChart: CHARTS.PointDiffChart,
+    MatchGraphChart: CHARTS.MatchGraphChart,
 
     // Custom cards
     MatchCard: CARDS.MatchCard,
@@ -510,39 +512,39 @@ export default defineComponent({
       );
     },
     details(): string {
-      var message = `<i>${this.ranked}</i> ${this.filteredMatches.length} matches `;
+      var message = `<i>${this.ranked}</i> ${this.filteredMatches.length} matches`;
       if (this.ranked !== Ranked.All) {
-        message = `${this.filteredMatches.length} <i>${this.ranked}</i> matches `;
+        message = `${this.filteredMatches.length} <i>${this.ranked}</i> matches`;
       }
       if (this.home !== Home.All) {
         if (this.home === Home.Home) {
-          message += "that you <i>challenged</i> ";
+          message += " that you <i>challenged</i>";
         } else {
-          message += "that you <i>accepted</i> ";
+          message += " that you <i>accepted</i>";
         }
       }
       if (this.higher !== Higher.All) {
         if (this.higher === Higher.Higher) {
-          message += "against <i>higher</i> ranked opponents ";
+          message += " against <i>higher</i> ranked opponents";
         } else {
-          message += "against <i>lower</i> ranked opponents ";
+          message += " against <i>lower</i> ranked opponents";
         }
       }
       if (
         this.startDate.getTime() == this.earliestDate.getTime() &&
         this.endDate.getTime() != this.latestDate.getTime()
       ) {
-        message += `<i>before</i> ${this.endDate.toDateString()}`;
+        message += ` <i>before</i> ${this.endDate.toDateString()}`;
       } else if (
         this.endDate.getTime() == this.latestDate.getTime() &&
         this.startDate.getTime() != this.earliestDate.getTime()
       ) {
-        message += `<i>after</i> ${this.startDate.toDateString()}`;
+        message += ` <i>after</i> ${this.startDate.toDateString()}`;
       } else if (
         this.startDate.getTime() != this.earliestDate.getTime() &&
         this.endDate.getTime() != this.latestDate.getTime()
       ) {
-        message += `<i>between</i> ${this.startDate.toDateString()} and ${this.endDate.toDateString()}`;
+        message += ` <i>between</i> ${this.startDate.toDateString()} and ${this.endDate.toDateString()}`;
       }
       if (
         this.selfRange[0] != this.selfMin ||
@@ -561,6 +563,7 @@ export default defineComponent({
       ) {
         message += ` when they were ${this.opponentRange[0]}-${this.opponentRange[1]}`;
       }
+      message += `. See your official profile at <a href="url">https://www.elevenvr.net/eleven/${this.id}</a>`;
       return message;
     },
     matchNumber(): number {
@@ -740,7 +743,6 @@ export default defineComponent({
         rounds.push(...currentMatchData["included"]);
         nexturl = currentMatchData["links"]["next"];
       }
-      console.log(matches);
       this.matches = processData(id, matches, rounds);
       this.message = "";
       this.loaded = true;

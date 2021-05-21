@@ -1,10 +1,7 @@
 <template>
-  <div class="cardbox p-col-12 p-md-6 p-lg-6">
+  <div class="cardbox p-col-12 p-md-12 p-lg-12">
     <Card class="p-p-2">
-      <template #title
-        ><Dropdown v-model="choice" :options="choiceOptions" /> against
-        different ELO ranges</template
-      >
+      <template #title>Match graph</template>
       <template #content>
         <vue3-chart-js ref="chartRef" v-bind="{ ...baseData }" />
       </template>
@@ -19,12 +16,12 @@ import Vue3ChartJs, { Vue3Chart } from "@j-t-mcc/vue3-chartjs";
 import {
   ChartConfiguration,
   ChartData,
-  TooltipModel,
   TooltipItem,
-  ChartTypeRegistry,
+  TooltipModel,
 } from "chart.js";
 import dayjs from "dayjs";
 import {
+  GraphMatchData,
   MatchStatistics,
   PlayerStatistics,
   PointStatistics,
@@ -34,7 +31,7 @@ import {
 import { formatScore } from "../util/parsing";
 
 export default defineComponent({
-  name: "EloRangeChart",
+  name: "MatchGraphChart",
   components: {
     Vue3ChartJs,
     Card,
@@ -42,19 +39,15 @@ export default defineComponent({
   },
   setup() {
     const chartRef: Ref<Vue3Chart> = ref(null) as unknown as Ref<Vue3Chart>;
-    const choice = ref("Games played");
-    const choiceOptions = ["Games played", "Winrate", "Elo gained"];
 
     return {
-      choice,
-      choiceOptions,
       chartRef,
     };
   },
   data() {
     return {
       baseData: {
-        type: "bar",
+        type: "line",
         options: {
           plugins: {
             tooltip: {
@@ -67,18 +60,16 @@ export default defineComponent({
             },
           },
           scales: {
-            x: {
-              stacked: true,
+            y: {
               title: {
                 display: true,
-                text: "ELO Range",
+                text: "Match ELO",
               },
             },
-            y: {
-              stacked: true,
+            x: {
               title: {
                 display: true,
-                text: "Matches",
+                text: "Match number",
               },
             },
           },
@@ -87,63 +78,59 @@ export default defineComponent({
           labels: [],
           datasets: [],
         },
-      } as ChartConfiguration<"bar">,
+      } as ChartConfiguration,
     };
   },
   mounted() {
-    this.updateChart()
+    this.updateChart();
   },
   computed: {
-    chartData(): ChartData<"bar"> {
-      let datasets = [
-        {
-          label: "Won",
-          data: this.all_player_stats.opponentRanges.map((r) => r.won),
-          backgroundColor: Array(
-            this.all_player_stats.opponentRanges.length
-          ).fill("#1fcf39"),
-        },
-        {
-          label: "Lost",
-          data: this.all_player_stats.opponentRanges.map((r) => r.lost),
-          backgroundColor: Array(
-            this.all_player_stats.opponentRanges.length
-          ).fill("#c91f1c"),
-        },
-      ];
-      if (this.choice == "Winrate") {
-        datasets = [
-          {
-            label: "Winrate",
-            data: this.all_player_stats.opponentRanges.map((r) => r.winrate),
-            backgroundColor: Array(
-              this.all_player_stats.opponentRanges.length
-            ).fill("#177dbd"),
-          },
-        ];
-      } else if (this.choice == "Elo gained") {
-        datasets = [
-          {
-            label: "Gained",
-            data: this.all_player_stats.opponentRanges.map((r) => r.eloGained),
-            backgroundColor: Array(
-              this.all_player_stats.opponentRanges.length
-            ).fill("#1fcf39"),
-          },
-          {
-            label: "Lost",
-            data: this.all_player_stats.opponentRanges.map((r) => r.eloLost),
-            backgroundColor: Array(
-              this.all_player_stats.opponentRanges.length
-            ).fill("#c91f1c"),
-          },
-        ];
-      }
+    chartData(): ChartData {
       return {
-        labels: this.all_player_stats.opponentRanges.map(
-          (r) => r.rangeFormatted
-        ),
-        datasets,
+        labels: [
+          ...Array(this.all_match_stats.playedGraph.selfElos.length).keys(),
+        ].map((x) => x + 1),
+        datasets: [
+          {
+            type: "line",
+            label: "Self ELO",
+            // @ts-ignore
+            data: this.all_match_stats.playedGraph.selfElos,
+            backgroundColor: Array(
+              this.all_match_stats.playedGraph.wonMatches.length
+            ).fill("#177dbd"),
+            parsing: {
+              xAxisKey: "id",
+              yAxisKey: "elo",
+            },
+          },
+          {
+            type: "scatter",
+            label: "Won match",
+            // @ts-ignore
+            data: this.all_match_stats.playedGraph.wonMatches,
+            backgroundColor: Array(
+              this.all_match_stats.playedGraph.wonMatches.length
+            ).fill("#1fcf39"),
+            parsing: {
+              xAxisKey: "id",
+              yAxisKey: "oppElo",
+            },
+          },
+          {
+            type: "scatter",
+            label: "Lost match",
+            // @ts-ignore
+            data: this.all_match_stats.playedGraph.lostMatches,
+            backgroundColor: Array(
+              this.all_match_stats.playedGraph.lostMatches.length
+            ).fill("#c91f1c"),
+            parsing: {
+              xAxisKey: "id",
+              yAxisKey: "oppElo",
+            },
+          },
+        ],
       };
     },
   },
@@ -155,8 +142,8 @@ export default defineComponent({
   props: {
     all_match_stats: {
       type: Object as PropType<MatchStatistics>,
-      required: false,
-      // required: true
+      // required: false,
+      required: true,
     },
     all_ranked_stats: {
       type: Object as PropType<RankedStatistics>,
@@ -165,8 +152,8 @@ export default defineComponent({
     },
     all_player_stats: {
       type: Object as PropType<PlayerStatistics>,
-      //   required: false,
-      required: true,
+      required: false,
+      // required: true,
     },
     all_round_stats: {
       type: Object as PropType<RoundStatistics>,
@@ -183,13 +170,6 @@ export default defineComponent({
     dayjs: dayjs,
     formatScore: formatScore,
     updateChart() {
-      if (this.choice == "Games played") {
-        this.baseData.options!.scales!.y!.title!.text = "Matches"
-      } else if (this.choice == "Winrate") {
-        this.baseData.options!.scales!.y!.title!.text = "Winrate"
-      } else {
-        this.baseData.options!.scales!.y!.title!.text = "ELO"
-      }
       this.baseData.data.labels = this.chartData.labels!;
       this.baseData.data.datasets = this.chartData.datasets!;
       this.chartRef.update();
@@ -198,14 +178,39 @@ export default defineComponent({
       this: TooltipModel<"bar">,
       tooltipItem: TooltipItem<"bar">
     ): string | string[] {
-      if (tooltipItem.dataset.label == "Won") {
-        return `Won: ${tooltipItem.formattedValue}`;
-      } else if (tooltipItem.dataset.label == "Gained") {
-        return `Gained: ${tooltipItem.formattedValue}`;
-      } else if (tooltipItem.dataset.label == "Lost") {
-        return `Lost: ${tooltipItem.formattedValue}`;
-      } else if (tooltipItem.dataset.label == "Winrate") {
-        return `Winrate: ${tooltipItem.formattedValue}%`;
+      if (tooltipItem.dataset.label == "Won match") {
+        const match = tooltipItem.dataset.data[
+          tooltipItem.dataIndex
+        ] as unknown as GraphMatchData;
+        return [
+          `Opponent: ${match.oppName}`,
+          `Opponent ELO: ${tooltipItem.formattedValue}`,
+          `Self ELO: ${match.selfElo}`,
+          `ELO gain: ${match.eloGain}`,
+          `Match score: ${match.matchScore}`,
+        ];
+      } else if (tooltipItem.dataset.label == "Lost match") {
+        const match = tooltipItem.dataset.data[
+          tooltipItem.dataIndex
+        ] as unknown as GraphMatchData;
+        return [
+          `Opponent: ${match.oppName}`,
+          `Opponent ELO: ${tooltipItem.formattedValue}`,
+          `Self ELO: ${match.selfElo}`,
+          `ELO loss: ${match.eloGain}`,
+          `Match score: ${match.matchScore}`,
+        ];
+      } else if (tooltipItem.dataset.label == "Self ELO") {
+        return [
+          `Self ELO: ${tooltipItem.formattedValue}`,
+          `Match date: ${
+            (
+              tooltipItem.dataset.data[tooltipItem.dataIndex] as unknown as {
+                date: string;
+              }
+            ).date
+          }`,
+        ];
       }
       return tooltipItem.formattedValue;
     },

@@ -85,8 +85,8 @@ export default defineComponent({
     },
     all_player_stats: {
       type: Object as PropType<PlayerStatistics>,
-      //   required: false,
-      required: true,
+        required: false,
+      // required: true,
     },
     all_round_stats: {
       type: Object as PropType<RoundStatistics>,

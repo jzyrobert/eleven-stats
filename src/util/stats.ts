@@ -2,8 +2,10 @@ import {
   DayStatistics,
   GainInfo,
   GainStatistics,
+  GraphMatchData,
   MatchData,
   MatchDayStatistics,
+  MatchGraphStatistics,
   MatchStatistics,
   MatchupStatistics,
   MostPlayedStatistics,
@@ -21,6 +23,7 @@ import {
 } from "../types/statTypes";
 import _, { range } from "lodash";
 import dayjs from "dayjs";
+import { formatScore } from "./parsing";
 
 // All statistics related to matches played
 export function ALL_MATCH_STATS(
@@ -36,6 +39,7 @@ export function ALL_MATCH_STATS(
     perDay: MATCHES_DAY_STATISTICS(matches, dayCutoff),
     winStreak: LONGEST_WINSTREAK(matches),
     lossStreak: LONGEST_LOSSSTREAK(matches),
+    playedGraph: COLLECT_MATCH_GRAPH_DATA(matches),
   };
 }
 
@@ -201,6 +205,53 @@ export function LONGEST_LOSSSTREAK(
       longestStreak[longestStreak.length - 1]["elo-change-corrected"],
     netElo: _.sumBy(longestStreak, (m) => m["elo-change-corrected"]),
     matches: longestStreak,
+  };
+}
+
+export function COLLECT_MATCH_GRAPH_DATA(
+  matches: Array<MatchData>
+): MatchGraphStatistics {
+  const reversedMatches = _.reverse(matches);
+  const wonMatches: Array<GraphMatchData> = reversedMatches.flatMap((m, i) => {
+    if (!m.won) {
+      return [];
+    }
+    return [
+      {
+        id: i + 1,
+        oppName: m.opponent.userName,
+        oppElo: m.opponent["match-elo"],
+        selfElo: m.self["match-elo"],
+        eloGain: m["elo-change-corrected"],
+        matchScore: formatScore(m),
+      },
+    ];
+  });
+  const lostMatches: Array<GraphMatchData> = reversedMatches.flatMap((m, i) => {
+    if (m.won) {
+      return [];
+    }
+    return [
+      {
+        id: i + 1,
+        oppName: m.opponent.userName,
+        oppElo: m.opponent["match-elo"],
+        selfElo: m.self["match-elo"],
+        eloGain: m["elo-change-corrected"],
+        matchScore: formatScore(m),
+      },
+    ];
+  });
+  return {
+    selfElos: reversedMatches.map((m, i) => {
+      return {
+        id: i + 1,
+        elo: m.self["match-elo"],
+        date: m.offsetDate.format("YYYY-MM-DD"),
+      };
+    }),
+    wonMatches,
+    lostMatches,
   };
 }
 

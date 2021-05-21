@@ -1,5 +1,5 @@
 <template>
-  <div class="cardbox p-col-12 p-md-6 p-lg-4">
+  <div class="cardbox p-col-12 p-md-6 p-lg-6">
     <Card class="p-p-2">
       <template #title
         ><Dropdown v-model="choice" :options="choiceOptions" /> point
@@ -63,7 +63,6 @@ export default defineComponent({
       baseData: {
         type: "bar",
         options: {
-          responsive: true,
           plugins: {
             tooltip: {
               callbacks: {

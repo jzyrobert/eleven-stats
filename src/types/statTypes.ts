@@ -165,7 +165,6 @@ export interface MatchData {
   "elo-diff-now-formatted": string;
   "elo-change": number;
   "elo-change-corrected": number;
-  // "elo-change-formatted": string,
   date: Dayjs;
   offsetDate: Dayjs;
   rounds: Array<RoundData>;
@@ -205,6 +204,25 @@ export interface MatchStatistics {
   perDay: MatchDayStatistics;
   winStreak: StreakStatistics;
   lossStreak: StreakStatistics;
+  playedGraph: MatchGraphStatistics;
+}
+
+export interface MatchGraphStatistics {
+  selfElos: Array<{
+    elo: number,
+    date: string
+  }>,
+  wonMatches: Array<GraphMatchData>,
+  lostMatches: Array<GraphMatchData>
+}
+
+export interface GraphMatchData {
+  id: number,
+  oppName: string,
+  oppElo: number,
+  selfElo: number,
+  eloGain: number,
+  matchScore: string,
 }
 
 export interface MatchupStatistics {

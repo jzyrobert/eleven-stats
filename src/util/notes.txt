@@ -7,10 +7,9 @@ Stats against elo range (graph?)
 Make it clearer stats are from selection only
 Add days played
 Limit matches pulled
+Winrate vs point difference
+Add link to official site
 
 Todo:
-Winrate vs point difference
 Games/Wins vs day of week
 Games/Wins vs time of day
-
-Add link to official site
