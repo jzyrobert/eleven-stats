@@ -4,9 +4,9 @@
       <template #title>Last chance</template>
       <template #content>
         <p>
-          <b>{{ all_round_stats.matchesTo3 }}%</b> of your matches go to
-          <b>round 3</b>. Of those, you won
-          <b>{{ all_round_stats.matchesTo3Won }}%</b>.
+          <b>{{ all_round_stats.matchesToLast }}%</b> of your matches go to
+          <b>round 3 or 5 (BO5)</b>. Of those, you won
+          <b>{{ all_round_stats.matchesToLastWon }}%</b>.
         </p>
         <p>
           <b>{{ all_round_stats.roundsToOvertime }}%</b> of your rounds go

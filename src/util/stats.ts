@@ -747,8 +747,13 @@ export function ALL_ROUND_STATS(matches: Array<MatchData>): RoundStatistics {
   const matchesFirstRoundLost = matches.filter(
     (m) => m.rounds.length > 1 && !m.rounds[0].won
   );
-  const matchesTo3 = matches.filter((m) => m.rounds.length > 2);
-  const matchesTo2 = matches.filter((m) => m.rounds.length <= 2);
+  const matchesToLast = matches.filter(
+    (m) => (!m.isBO5 && m.rounds.length > 2) || (m.isBO5 && m.rounds.length > 4)
+  );
+  const matchesOnlyWin = matches.filter(
+    (m) =>
+      (!m.isBO5 && m.rounds.length <= 2) || (m.isBO5 && m.rounds.length <= 3)
+  );
   return {
     roundsPlayed: rounds.length,
     roundsWon: wonRounds.length,
@@ -765,9 +770,9 @@ export function ALL_ROUND_STATS(matches: Array<MatchData>): RoundStatistics {
       _.meanBy(lostMatches, (m) => m.rounds.length),
       false
     ),
-    matchesTo3: round(matchesTo3.length / matches.length, true),
-    matchesTo3Won: round(
-      matchesTo3.filter((m) => m.won).length / matchesTo3.length,
+    matchesToLast: round(matchesToLast.length / matches.length, true),
+    matchesToLastWon: round(
+      matchesToLast.filter((m) => m.won).length / matchesToLast.length,
       true
     ),
     roundsToOvertime: round(roundsToOvertime.length / roundCount, true),
@@ -775,8 +780,9 @@ export function ALL_ROUND_STATS(matches: Array<MatchData>): RoundStatistics {
       roundsToOvertime.filter((r) => r.won).length / roundsToOvertime.length,
       true
     ),
-    matchesTo2Won: round(
-      matchesTo2.filter((m) => m.won).length / matchesTo2.length,
+    matchesOnlyWin: round(matchesOnlyWin.length / matches.length, true),
+    matchesFastWon: round(
+      matchesOnlyWin.filter((m) => m.won).length / matchesOnlyWin.length,
       true
     ),
     hardWonRounds: rounds.filter((r) => r["opponent-score"] == 0).length,

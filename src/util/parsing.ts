@@ -109,6 +109,7 @@ export function processData(
       home: home,
       won: match.attributes["winner"] != Number(home),
       complete: match.attributes.state == 1 && match.attributes.winner > -1,
+      isBO5: false,
       self: createPlayerData(home, match, true),
       opponent: createPlayerData(home, match, false),
       "elo-diff": 0,
@@ -157,6 +158,10 @@ export function processData(
       newMatch.rounds.push(newRoundData);
     }
     newMatch.rounds.sort((r1, r2) => parseInt(r1.id) - parseInt(r2.id));
+    newMatch.isBO5 =
+      newMatch.rounds.length > 3 ||
+      newMatch.rounds.filter((r) => r.won).length == 3 ||
+      newMatch.rounds.filter((r) => !r.won).length == 3;
     processedMatches.push(newMatch);
   }
   processedMatches.forEach((m, index) => {

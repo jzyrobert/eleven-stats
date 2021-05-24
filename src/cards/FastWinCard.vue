@@ -4,10 +4,9 @@
       <template #title>Fast win..or fast loss?</template>
       <template #content>
         <p>
-          Of the remaining
-          {{ 100 - Number(all_round_stats.matchesTo3) }}% matches that end in
-          <b>2 rounds</b>, you won
-          <b>{{ all_round_stats.matchesTo2Won }}%</b> of them.
+          Of the {{ all_round_stats.matchesOnlyWin }}% matches that end in
+          <b>2 or 3 (BO5) rounds</b>, you won
+          <b>{{ all_round_stats.matchesFastWon }}%</b> of them.
         </p>
         <p>
           You won <b>{{ all_round_stats.hardWonRounds }}</b> ({{

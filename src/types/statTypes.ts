@@ -157,6 +157,7 @@ export interface MatchData {
   home: boolean;
   won: boolean;
   complete: boolean;
+  isBO5: boolean;
   self: PlayerData;
   opponent: PlayerData;
   "elo-diff": number;
@@ -209,20 +210,20 @@ export interface MatchStatistics {
 
 export interface MatchGraphStatistics {
   selfElos: Array<{
-    elo: number,
-    date: string
-  }>,
-  wonMatches: Array<GraphMatchData>,
-  lostMatches: Array<GraphMatchData>
+    elo: number;
+    date: string;
+  }>;
+  wonMatches: Array<GraphMatchData>;
+  lostMatches: Array<GraphMatchData>;
 }
 
 export interface GraphMatchData {
-  id: number,
-  oppName: string,
-  oppElo: number,
-  selfElo: number,
-  eloGain: number,
-  matchScore: string,
+  id: number;
+  oppName: string;
+  oppElo: number;
+  selfElo: number;
+  eloGain: number;
+  matchScore: string;
 }
 
 export interface MatchupStatistics {
@@ -233,7 +234,7 @@ export interface MatchupStatistics {
 export interface MatchDayStatistics {
   average: number;
   startDate: Dayjs;
-  daysSinceStart: number,
+  daysSinceStart: number;
   daysPlayed: number;
   maxDate: Dayjs;
   maxPlayed: number;
@@ -349,11 +350,12 @@ export interface RoundStatistics {
   averageRounds: number;
   averageRoundsWon: number;
   averageRoundsLost: number;
-  matchesTo3: number;
-  matchesTo3Won: number;
+  matchesToLast: number;
+  matchesToLastWon: number;
   roundsToOvertime: number;
   roundsToOvertimeWon: number;
-  matchesTo2Won: number;
+  matchesOnlyWin: number;
+  matchesFastWon: number;
   hardWonRounds: number;
   hardWonRoundsPercentage: number;
   hardLostRounds: number;
@@ -367,21 +369,21 @@ export interface RoundStatistics {
 }
 
 export interface RoundDiffStatistics {
-  deuceNextWinrate: number,
-  wonMatchDeuceNextWinrate: number,
-  lostMatchDeuceNextWinrate: number,
-  pointDiffs: Array<number>
-  pointDiffWins: Array<RoundDiff>,
-  pointDiffLoss: Array<RoundDiff>,
-  pointDiffWinrate: Array<RoundDiff>,
-  prevPointDiffWins: Array<RoundDiff>
-  prevPointDiffLoss: Array<RoundDiff>
-  prevPointDiffWinrate: Array<RoundDiff>
+  deuceNextWinrate: number;
+  wonMatchDeuceNextWinrate: number;
+  lostMatchDeuceNextWinrate: number;
+  pointDiffs: Array<number>;
+  pointDiffWins: Array<RoundDiff>;
+  pointDiffLoss: Array<RoundDiff>;
+  pointDiffWinrate: Array<RoundDiff>;
+  prevPointDiffWins: Array<RoundDiff>;
+  prevPointDiffLoss: Array<RoundDiff>;
+  prevPointDiffWinrate: Array<RoundDiff>;
 }
 
 export interface RoundDiff {
-  diff: number,
-  stat: number,
+  diff: number;
+  stat: number;
 }
 
 export interface PointStatistics {
