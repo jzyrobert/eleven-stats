@@ -242,14 +242,20 @@ export function COLLECT_MATCH_GRAPH_DATA(
       },
     ];
   });
+  const selfElos = reversedMatches.map((m, i) => {
+    return {
+      id: i + 1,
+      elo: m.self["match-elo"],
+      date: m.offsetDate.format("YYYY-MM-DD"),
+    };
+  })
+  selfElos.push({
+    id: selfElos.length + 1,
+    elo: matches[0].self["current-elo"],
+    date: matches[0].offsetDate.format("YYYY-MM-DD")
+  })
   return {
-    selfElos: reversedMatches.map((m, i) => {
-      return {
-        id: i + 1,
-        elo: m.self["match-elo"],
-        date: m.offsetDate.format("YYYY-MM-DD"),
-      };
-    }),
+    selfElos,
     wonMatches,
     lostMatches,
   };

@@ -17,6 +17,107 @@ export const enum Higher {
   Higher = "higher",
   Lower = "lower",
 }
+
+// Example new match data
+// {
+//   "id": "8746914",
+//   "type": "matches",
+//   "attributes": {
+//       "ranked": true,
+//       "number-of-rounds": 2,
+//       "state": 1,
+//       "winning-team": 1,
+//       "losing-team": 0,
+//       "home-score": 0,
+//       "away-score": 2,
+//       "created-at": "2021-05-28T18:32:47.679Z",
+//       "elo-change": 6,
+//       "home-elo-avg": 3130,
+//       "away-elo-avg": 3240,
+//       "rounds": [
+//           {
+//               "id": 19612600,
+//               "away-score": 11,
+//               "home-score": 6,
+//               "round-number": 0,
+//               "state": 0,
+//               "winner": 1,
+//               "created-at": "2021-05-28T18:35:17.863Z"
+//           },
+//           {
+//               "id": 19612412,
+//               "away-score": 11,
+//               "home-score": 8,
+//               "round-number": 0,
+//               "state": 0,
+//               "winner": 1,
+//               "created-at": "2021-05-28T18:32:47.679Z"
+//           }
+//       ],
+//       "players": [
+//           {
+//               "id": 385684,
+//               "username": "BLANK",
+//               "elo": 3240,
+//               "rank": 195,
+//               "wins": 915,
+//               "losses": 251,
+//               "last-online": "2021-05-28T18:52:48.276Z",
+//               "team": 1,
+//               "current-elo": 3254.2
+//           },
+//           {
+//               "id": 11111,
+//               "username": "PERSON",
+//               "elo": 3130,
+//               "rank": 89,
+//               "wins": 652,
+//               "losses": 107,
+//               "last-online": "2021-05-30T03:51:57.036Z",
+//               "team": 0,
+//               "current-elo": 3103
+//           }
+//       ]
+//   }
+// }
+export interface NewRawMatchData {
+  id: string,
+  type: string,
+  attributes: {
+    ranked: boolean,
+    "number-of-rounds": number,
+    state: number,
+    "winning-team": number,
+    "losing-team": number,
+    "home-score": number,
+    "away-score": number,
+    "created-at": string,
+    "elo-change": number,
+    "home-elo-avg": number,
+    "away-elo-avg": number,
+    rounds: [{
+      id: number,
+      "away-score": number,
+      "home-score": number,
+      "round-number": number,
+      state: number,
+      winner: number,
+      "created-at": string
+    }],
+    players: [{
+      id: number,
+      username: string,
+      elo: number,
+      rank: number,
+      wins: number,
+      losses: number,
+      "last-online": string,
+      team: number,
+      "current-elo": number
+    }]
+  }
+}
+
 //Example match data
 // {
 //     "id": "8128594",

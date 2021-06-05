@@ -201,8 +201,23 @@ export default defineComponent({
           `Match score: ${match.matchScore}`,
         ];
       } else if (tooltipItem.dataset.label == "Self ELO") {
+        if (
+          tooltipItem.dataIndex ==
+          this.all_match_stats.playedGraph.selfElos.length - 1
+        ) {
+          return [
+            `Current ELO: ${tooltipItem.formattedValue}`,
+            `Last Match date: ${
+              (
+                tooltipItem.dataset.data[tooltipItem.dataIndex] as unknown as {
+                  date: string;
+                }
+              ).date
+            }`,
+          ];
+        }
         return [
-          `Self ELO: ${tooltipItem.formattedValue}`,
+          `Self Match ELO: ${tooltipItem.formattedValue}`,
           `Match date: ${
             (
               tooltipItem.dataset.data[tooltipItem.dataIndex] as unknown as {

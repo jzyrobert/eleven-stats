@@ -294,7 +294,7 @@
 
 <script lang="ts">
 import * as STATS from "../util/stats";
-import { processData, filterMatches, formatScore } from "../util/parsing";
+import { collectAndProcessData, filterMatches, formatScore, getJSON } from "../util/parsing";
 import { minBy, maxBy, debounce } from "lodash";
 import * as SAMPLE_HUGE from "../util/sampleLarge";
 import { Ref, ref, defineComponent, onMounted, computed } from "vue";
@@ -681,15 +681,11 @@ export default defineComponent({
       // @ts-ignore
       this.actualOpponentRange = value;
     }, 1000),
-    async getJSON(url: string) {
-      const response = await fetch(url);
-      return response.json();
-    },
     async validateID() {
       if (!this.name && !this.id) {
         return false;
       } else if (!this.id) {
-        const results = await this.getJSON(
+        const results = await getJSON(
           `https://www.elevenvr.club/accounts/search/${encodeURIComponent(
             this.name
           )}`
@@ -731,19 +727,7 @@ export default defineComponent({
       } else {
         this.id = id;
       }
-      const matches = [];
-      const rounds = [];
-      var nexturl = `https://www.elevenvr.club/accounts/${this.id}/matches`;
-      while (
-        nexturl &&
-        (this.pullLimit == 0 || matches.length < this.pullLimit)
-      ) {
-        const currentMatchData = await this.getJSON(nexturl);
-        matches.push(...currentMatchData["data"]);
-        rounds.push(...currentMatchData["included"]);
-        nexturl = currentMatchData["links"]["next"];
-      }
-      this.matches = processData(id, matches, rounds);
+      this.matches = await collectAndProcessData(id, this.pullLimit);
       this.message = "";
       this.loaded = true;
       this.startDate = this.earliestDate;
