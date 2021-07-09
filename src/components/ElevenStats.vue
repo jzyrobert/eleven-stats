@@ -1,5 +1,11 @@
 <template>
   <div>
+    <h4>
+      Bramble's stats is now incorporated into the
+      <a href="https://beta.11-stats.com">11-stats.com beta</a>, with more stats
+      and more features!
+    </h4>
+    <h4>Simply head to https://beta.11-stats.com/stats/YOUR_ID/statistics</h4>
     <form @submit.prevent="collectStats">
       <div>
         <label class="p-m-2" for="id">Enter Eleven ID (exact) </label>
@@ -294,7 +300,12 @@
 
 <script lang="ts">
 import * as STATS from "../util/stats";
-import { collectAndProcessData, filterMatches, formatScore, getJSON } from "../util/parsing";
+import {
+  collectAndProcessData,
+  filterMatches,
+  formatScore,
+  getJSON,
+} from "../util/parsing";
 import { minBy, maxBy, debounce } from "lodash";
 import * as SAMPLE_HUGE from "../util/sampleLarge";
 import { Ref, ref, defineComponent, onMounted, computed } from "vue";

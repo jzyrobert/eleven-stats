@@ -203,6 +203,7 @@ export default defineComponent({
       } else if (tooltipItem.dataset.label == "Self ELO") {
         if (
           tooltipItem.dataIndex ==
+          // @ts-ignore
           this.all_match_stats.playedGraph.selfElos.length - 1
         ) {
           return [
